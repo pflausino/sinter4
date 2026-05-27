@@ -1,0 +1,54 @@
+@page "/health"
+@attribute [StreamRendering]
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>Health Check</PageTitle>
+
+<h1>Health Check</h1>
+
+<p>Status de comunicação com a API.</p>
+
+@if (loading)
+{
+    <p><em>Verificando...</em></p>
+}
+else if (errorMessage is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        <strong>Erro de conexão:</strong> @errorMessage
+    </div>
+}
+else if (healthResponse is not null)
+{
+    <div class="alert @(healthResponse.Status == "Healthy" ? "alert-success" : "alert-warning")" role="alert">
+        <p><strong>Status:</strong> @healthResponse.Status</p>
+        <p><strong>Timestamp:</strong> @healthResponse.Timestamp.ToString("yyyy-MM-dd HH:mm:ss") UTC</p>
+    </div>
+}
+
+@code {
+    private Shared.Dtos.HealthCheckResponse? healthResponse;
+    private string? errorMessage;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("Api");
+            healthResponse = await client.GetFromJsonAsync<Shared.Dtos.HealthCheckResponse>("/health");
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Não foi possível conectar à API. Verifique se o servidor está em execução.";
+        }
+        catch (Exception)
+        {
+            errorMessage = "Ocorreu um erro inesperado ao verificar o status da API.";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

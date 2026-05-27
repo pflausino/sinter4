@@ -63,8 +63,8 @@ Implementação incremental da estrutura mínima funcional do mono-repo SinterPr
     - Connection string apontando para o PostgreSQL do Docker Compose
     - _Requirements: 3.3_
 
-- [ ] 6. Implementar testes da API
-  - [~] 6.1 Criar `tests/Api.Tests/HealthEndpointTests.cs`
+- [x] 6. Implementar testes da API
+  - [x] 6.1 Criar `tests/Api.Tests/HealthEndpointTests.cs`
     - Usar WebApplicationFactory<Program> para instanciar a API in-process
     - Substituir DbContext por provider InMemory para isolamento
     - Teste: GET /health retorna 200 OK
@@ -72,24 +72,24 @@ Implementação incremental da estrutura mínima funcional do mono-repo SinterPr
     - Teste: status é "Healthy" quando banco (InMemory) está disponível
     - _Requirements: 6.1, 6.2, 6.3_
 
-- [~] 7. Checkpoint — Verificar build e testes
+- [x] 7. Checkpoint — Verificar build e testes
   - Executar `dotnet build` na raiz e garantir que compila sem erros
   - Executar `dotnet test` na raiz e garantir que todos os testes passam
   - Ensure all tests pass, ask the user if questions arise.
   - _Requirements: 7.1, 7.2_
 
-- [ ] 8. Implementar projeto Blazor Web
-  - [~] 8.1 Criar `src/Web/Program.cs` com configuração mínima do Blazor
+- [x] 8. Implementar projeto Blazor Web
+  - [x] 8.1 Criar `src/Web/Program.cs` com configuração mínima do Blazor
     - Registrar HttpClient apontando para a URL da API
     - Configurar Blazor Server ou WebAssembly (conforme padrão do projeto)
     - _Requirements: 5.2_
-  - [~] 8.2 Criar página `src/Web/Pages/Health.razor` consumindo o endpoint de health-check
+  - [x] 8.2 Criar página `src/Web/Pages/Health.razor` consumindo o endpoint de health-check
     - Rota: `/health`
     - Fazer GET para a API e exibir o status retornado
     - Tratar erro de conexão com mensagem amigável
     - _Requirements: 5.1, 5.3_
 
-- [~] 9. Checkpoint final — Verificar build completo e testes
+- [x] 9. Checkpoint final — Verificar build completo e testes
   - Executar `dotnet build` na raiz e garantir que compila sem erros (incluindo Web)
   - Executar `dotnet test` na raiz e garantir que todos os testes passam
   - Ensure all tests pass, ask the user if questions arise.

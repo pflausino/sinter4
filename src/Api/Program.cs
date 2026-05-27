@@ -10,3 +10,6 @@ var app = builder.Build();
 app.MapHealthEndpoints();
 
 app.Run();
+
+// Necessário para WebApplicationFactory<Program> nos testes
+public partial class Program { }
