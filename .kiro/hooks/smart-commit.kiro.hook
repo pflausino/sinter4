@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Smart Commit",
+  "description": "Stages all pending changes in the repo and creates a commit with the best possible commit message describing what was changed.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Look at the current git diff (staged and unstaged) to understand all pending changes. Then: 1) Stage all changes with `git add -A`. 2) Write the best possible commit message following Conventional Commits format (e.g. feat:, fix:, chore:, refactor:). The message should have a concise subject line (<70 chars) and, if needed, a body explaining the why. 3) Create the commit with that message. Show me the commit message you used."
+  }
+}
