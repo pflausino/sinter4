@@ -1,0 +1,126 @@
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# .NET
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# User-specific files (MonoDevelop/Xamarin Studio)
+*.userprefs
+
+# Mono auto generated files
+mono_crash.*
+
+# Build results from Roslyn
+*.GeneratedMSBuildEditorConfig.editorconfig
+
+# MSTest test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# NUnit
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+# Build results of an ideally placed output
+[Rr]esults/
+
+# .NET Core
+project.nuget.cache
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+nuget.exe
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+# Chutzpah Test files
+_Chutzpah*
+
+# Visual Studio cache/options directory
+.vs/
+.vscode/
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Visual Studio Code
+*.code-workspace
+
+# Kiro
+# Keep .kiro/steering and .kiro/specs but ignore settings
+.kiro/settings/
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+
+# Secrets and environment
+*.env
+.env.*
+appsettings.*.local.json
+
+# User secrets (local dev)
+secrets.json
+
+# Entity Framework
+*.db
+*.db-shm
+*.db-wal
+
+# Docker
+docker-compose.override.yml
+
+# Coverage and test reports
+coverage/
+*.coverage
+*.coveragexml
+TestResults/
+lcov.info
+
+# Publish output
+publish/
+
+# Blazor
+**/wwwroot/_framework/
+
+# Misc
+*.swp
+*.bak
+*.tmp
+*.orig
