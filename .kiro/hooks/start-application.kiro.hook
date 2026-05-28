@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "name": "Start Application",
+  "description": "Sobe o PostgreSQL via Docker e inicia a API com dotnet run",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "bash -c '(docker compose ps --status running --format \"{{.Name}}\" | grep -q postgres || docker compose up -d) && dotnet run --project src/Api'"
+  },
+  "workspaceFolderName": "SinterPrints4",
+  "shortName": "start-application"
+}

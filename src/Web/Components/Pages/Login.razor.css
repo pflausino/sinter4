@@ -1,0 +1,123 @@
+/* Login Page — Full-viewport gradient background */
+.login-page {
+    min-height: 100vh;
+    width: 100vw;
+    background: linear-gradient(to bottom, #0099CC, #00BFFF);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+/* Login Card — Centered dark container */
+.login-card {
+    background: #1A1A1A;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    max-width: 440px;
+    width: 100%;
+    padding: 40px;
+    color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+}
+
+/* Logo */
+.login-logo {
+    max-width: 80%;
+    max-height: 180px;
+    display: block;
+    margin: 0 auto 8px;
+    object-fit: contain;
+}
+
+/* Form group spacing */
+.form-group {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Labels */
+.form-group label {
+    font-size: 0.875rem;
+    color: #FFFFFF;
+    margin-bottom: 4px;
+}
+
+/* Input fields */
+.form-group input,
+::deep input {
+    border: 1px solid #00BFFF;
+    background: transparent;
+    color: #FFFFFF;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 200ms;
+}
+
+/* Input placeholder color */
+.form-group input::placeholder,
+::deep input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Input focus state */
+.form-group input:focus,
+::deep input:focus {
+    border-color: #FFFFFF;
+    box-shadow: 0 0 0 2px rgba(0, 191, 255, 0.3);
+}
+
+/* Validation messages */
+.form-group .validation-message,
+::deep .validation-message {
+    color: #FF4D4D;
+    font-size: 0.8rem;
+    margin-top: 4px;
+}
+
+/* Entrar button */
+.btn-entrar {
+    background: #FF0066;
+    color: #FFFFFF;
+    width: 100%;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 300ms;
+}
+
+.btn-entrar:hover {
+    background: #FFCC00;
+    color: #FFFFFF;
+}
+
+/* Disabled state */
+.btn-entrar:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-entrar:disabled:hover {
+    background: #FF0066;
+}
+
+/* Responsive — small screens */
+@media (max-width: 576px) {
+    .login-card {
+        width: 92%;
+        padding: 24px;
+    }
+}

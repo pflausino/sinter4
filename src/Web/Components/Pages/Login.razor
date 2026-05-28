@@ -1,0 +1,38 @@
+@page "/"
+@page "/login"
+@layout LoginLayout
+@rendermode InteractiveServer
+
+<div class="login-page">
+    <div class="login-card">
+        <img class="login-logo" src="images/logo.png" alt="SinterPrints" />
+
+        <EditForm Model="Model" OnValidSubmit="HandleValidSubmit" FormName="loginForm">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <InputText id="email" @bind-Value="Model.Email" type="email" placeholder="Email" maxlength="254" />
+                <ValidationMessage For="() => Model.Email" />
+            </div>
+
+            <div class="form-group">
+                <label for="password">Senha</label>
+                <InputText id="password" @bind-Value="Model.Password" type="password" placeholder="Senha" />
+                <ValidationMessage For="() => Model.Password" />
+            </div>
+
+            <button type="submit" class="btn-entrar" disabled="@IsSubmitting">
+                @if (IsSubmitting)
+                {
+                    <span class="spinner"></span>
+                    <span>Entrando...</span>
+                }
+                else
+                {
+                    <span>Entrar</span>
+                }
+            </button>
+        </EditForm>
+    </div>
+</div>
