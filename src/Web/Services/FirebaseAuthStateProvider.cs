@@ -40,6 +40,11 @@ public class FirebaseAuthStateProvider : AuthenticationStateProvider
             var result = await _localStorage.GetAsync<string>(IdTokenKey);
             token = result.Success ? result.Value : null;
         }
+        catch (InvalidOperationException)
+        {
+            // JS interop not available during prerendering — return anonymous until circuit is active
+            return AnonymousState;
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to read token from protected storage");

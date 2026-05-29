@@ -1,13 +1,13 @@
 @page "/"
 @page "/login"
 @layout LoginLayout
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <div class="login-page">
     <div class="login-card">
         <img class="login-logo" src="images/logo.png" alt="SinterPrints" />
 
-        <EditForm Model="Model" OnValidSubmit="HandleValidSubmit" FormName="loginForm">
+        <EditForm Model="Model" OnValidSubmit="HandleValidSubmit">
             <DataAnnotationsValidator />
 
             <div class="form-group">

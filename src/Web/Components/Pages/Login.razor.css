@@ -33,6 +33,10 @@
     object-fit: contain;
 }
 
+::deep form {
+    width: 75%;
+}
+
 /* Form group spacing */
 .form-group {
     width: 100%;
@@ -61,7 +65,7 @@
     box-sizing: border-box;
     outline: none;
     transition: border-color 200ms;
-    margin-bottom: 8px;
+    margin-bottom: 16px;
 }
 
 /* Input placeholder color */
@@ -83,6 +87,16 @@
     color: #FF4D4D;
     font-size: 0.8rem;
     margin-top: 4px;
+}
+
+/* Error message (login failure) */
+.error-message {
+    color: #FF4D4D;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-top: 8px;
+    text-align: center;
+    width: 100%;
 }
 
 /* Entrar button */
