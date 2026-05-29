@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Components.Authorization;
 using Web.Components;
 using Web.Services;
@@ -8,8 +11,21 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddAuthorizationCore();
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = "BlazorServer";
+}).AddCookie("BlazorServer", options =>
+{
+    options.Events.OnRedirectToLogin = context =>
+    {
+        context.Response.StatusCode = 401;
+        return Task.CompletedTask;
+    };
+});
+builder.Services.AddAuthorization();
+builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, BlazorAuthorizationMiddlewareResultHandler>();
 
+builder.Services.AddScoped<ITokenStorage, ProtectedTokenStorage>();
 builder.Services.AddScoped<ITokenProvider, FirebaseTokenProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider, FirebaseAuthStateProvider>();
 
@@ -43,3 +59,16 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+
+/// <summary>
+/// Prevents the server-side authorization middleware from issuing challenges/redirects.
+/// Blazor's AuthorizeRouteView handles unauthorized state at the component level.
+/// </summary>
+public class BlazorAuthorizationMiddlewareResultHandler : IAuthorizationMiddlewareResultHandler
+{
+    public Task HandleAsync(RequestDelegate next, HttpContext context, AuthorizationPolicy policy,
+        PolicyAuthorizationResult authorizeResult)
+    {
+        return next(context);
+    }
+}

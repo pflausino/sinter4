@@ -10,6 +10,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
     private static readonly string FakeServiceAccountPath;
 
+    public static string GetFakeServiceAccountPath() => FakeServiceAccountPath;
+
     static CustomWebApplicationFactory()
     {
         // Generate a PKCS8 private key for the fake service account

@@ -62,6 +62,13 @@ app.UseAuthorization();
 
 app.MapHealthEndpoints();
 
+app.MapGet("/api/me", (HttpContext context) =>
+{
+    var uid = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var email = context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+    return Results.Ok(new { uid, email });
+}).RequireAuthorization("Authenticated");
+
 app.Run();
 
 // Necessário para WebApplicationFactory<Program> nos testes

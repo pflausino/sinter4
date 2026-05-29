@@ -1,6 +1,12 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject Web.Services.ITokenProvider TokenProvider
+@inject ILogger<NavMenu> Logger
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">Web</a>
+        <a class="navbar-brand" href="">SinterPrints</a>
     </div>
 </div>
 
@@ -9,12 +15,61 @@
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="nav flex-column">
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+            <NavLink class="nav-link" href="dashboard" Match="NavLinkMatch.All">
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
             </NavLink>
         </div>
-
-
     </nav>
+
+    <div class="nav-bottom">
+        <div class="nav-item px-3">
+            <button class="nav-link logout-btn" @onclick="HandleLogoutAsync" disabled="@_isLoggingOut" aria-label="Sair">
+                <span class="bi bi-box-arrow-left-nav-menu" aria-hidden="true"></span>
+                @if (_isLoggingOut)
+                {
+                    <span>Saindo...</span>
+                }
+                else
+                {
+                    <span>Sair</span>
+                }
+            </button>
+        </div>
+    </div>
 </div>
 
+@code {
+    private bool _isLoggingOut;
+
+    private async Task HandleLogoutAsync()
+    {
+        if (_isLoggingOut)
+            return;
+
+        _isLoggingOut = true;
+        StateHasChanged();
+
+        try
+        {
+            await TokenProvider.SignOutAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to clear tokens during logout");
+        }
+
+        try
+        {
+            if (AuthStateProvider is Web.Services.FirebaseAuthStateProvider firebaseAuthState)
+            {
+                firebaseAuthState.NotifyStateChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to notify auth state change during logout");
+        }
+
+        Navigation.NavigateTo("/login", forceLoad: false);
+    }
+}

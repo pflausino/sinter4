@@ -12,4 +12,8 @@
     <UserSecretsId>329a411d-d79a-497c-ba17-da8b295bd9f1</UserSecretsId>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Web.Tests" />
+  </ItemGroup>
+
 </Project>

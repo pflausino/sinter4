@@ -23,11 +23,11 @@ Integrate Firebase Authentication into SinterPrints as the sole identity provide
     - Register `IAuthService` as scoped with `FirebaseAuthService` implementation
     - _Requirements: 2.1, 2.2, 2.5_
 
-  - [ ]* 1.4 Write property test for startup credential file validation
+  - [x] 1.4 Write property test for startup credential file validation
     - **Property 5: Startup credential file validation**
     - **Validates: Requirements 2.3, 2.4, 6.5**
 
-  - [ ]* 1.5 Write property test for missing configuration key exception
+  - [x] 1.5 Write property test for missing configuration key exception
     - **Property 9: Missing configuration key exception identifies the key**
     - **Validates: Requirements 6.4**
 
@@ -49,23 +49,23 @@ Integrate Firebase Authentication into SinterPrints as the sole identity provide
     - Apply policy to protected endpoint groups
     - _Requirements: 5.5_
 
-  - [ ]* 2.4 Write property test for valid JWT claim extraction
+  - [x] 2.4 Write property test for valid JWT claim extraction
     - **Property 1: Valid JWT claim extraction preserves token identity**
     - **Validates: Requirements 1.2**
 
-  - [ ]* 2.5 Write property test for malformed token rejection
+  - [x] 2.5 Write property test for malformed token rejection
     - **Property 2: Malformed tokens are uniformly rejected**
     - **Validates: Requirements 1.4**
 
-  - [ ]* 2.6 Write property test for audience and issuer validation
+  - [x] 2.6 Write property test for audience and issuer validation
     - **Property 3: Token audience and issuer validation**
     - **Validates: Requirements 1.6**
 
-  - [ ]* 2.7 Write property test for clock skew boundary enforcement
+  - [x] 2.7 Write property test for clock skew boundary enforcement
     - **Property 4: Clock skew boundary enforcement**
     - **Validates: Requirements 1.7**
 
-  - [ ]* 2.8 Write property test for Authenticated policy evaluation
+  - [x] 2.8 Write property test for Authenticated policy evaluation
     - **Property 8: Authenticated policy accepts any authenticated user**
     - **Validates: Requirements 5.5**
 
@@ -102,15 +102,15 @@ Integrate Firebase Authentication into SinterPrints as the sole identity provide
     - Configure named `HttpClient` for Firebase REST API calls
     - _Requirements: 3.5_
 
-  - [ ]* 4.5 Write property test for Firebase error code mapping
+  - [x] 4.5 Write property test for Firebase error code mapping
     - **Property 6: Firebase error codes map to user-friendly messages**
     - **Validates: Requirements 3.3**
 
-  - [ ]* 4.6 Write property test for token refresh timing
+  - [x] 4.6 Write property test for token refresh timing
     - **Property 7: Token refresh triggers within expiration window**
     - **Validates: Requirements 3.6**
 
-  - [ ]* 4.7 Write unit tests for `FirebaseTokenProvider` (sign-in, refresh, timeout scenarios)
+  - [x] 4.7 Write unit tests for `FirebaseTokenProvider` (sign-in, refresh, timeout scenarios)
     - Test successful sign-in stores tokens and returns success
     - Test invalid credentials returns localized error
     - Test timeout after 15 seconds returns connectivity error
@@ -137,7 +137,7 @@ Integrate Firebase Authentication into SinterPrints as the sole identity provide
     - Handle storage clear failures gracefully (still transition state)
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-  - [ ]* 6.3 Write unit tests for Login page integration (bUnit)
+  - [x] 6.3 Write unit tests for Login page integration (bUnit)
     - Test form submission calls `ITokenProvider.SignInAsync`
     - Test navigation to `/dashboard` on success
     - Test error message display on failure

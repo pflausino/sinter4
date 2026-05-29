@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
 namespace Web.Services;
 
@@ -13,19 +12,19 @@ public class FirebaseTokenProvider : ITokenProvider
     private const int RefreshRetryDelayMs = 2000;
 
     private readonly HttpClient _httpClient;
-    private readonly ProtectedLocalStorage _localStorage;
+    private readonly ITokenStorage _tokenStorage;
     private readonly string _apiKey;
     private readonly ILogger<FirebaseTokenProvider> _logger;
 
     public FirebaseTokenProvider(
         IHttpClientFactory httpClientFactory,
-        ProtectedLocalStorage localStorage,
+        ITokenStorage tokenStorage,
         IConfiguration configuration,
         ILogger<FirebaseTokenProvider> logger)
     {
         _httpClient = httpClientFactory.CreateClient("FirebaseAuth");
         _httpClient.Timeout = TimeSpan.FromSeconds(HttpTimeoutSeconds);
-        _localStorage = localStorage;
+        _tokenStorage = tokenStorage;
         _apiKey = configuration["Firebase:ApiKey"]
             ?? throw new InvalidOperationException("Required configuration key 'Firebase:ApiKey' is missing or empty");
         _logger = logger;
@@ -78,7 +77,7 @@ public class FirebaseTokenProvider : ITokenProvider
     {
         try
         {
-            var result = await _localStorage.GetAsync<string>(IdTokenKey);
+            var result = await _tokenStorage.GetAsync(IdTokenKey);
             return result.Success ? result.Value : null;
         }
         catch
@@ -91,8 +90,8 @@ public class FirebaseTokenProvider : ITokenProvider
     {
         try
         {
-            await _localStorage.DeleteAsync(IdTokenKey);
-            await _localStorage.DeleteAsync(RefreshTokenKey);
+            await _tokenStorage.DeleteAsync(IdTokenKey);
+            await _tokenStorage.DeleteAsync(RefreshTokenKey);
         }
         catch (Exception ex)
         {
@@ -105,7 +104,7 @@ public class FirebaseTokenProvider : ITokenProvider
         string? refreshToken;
         try
         {
-            var result = await _localStorage.GetAsync<string>(RefreshTokenKey);
+            var result = await _tokenStorage.GetAsync(RefreshTokenKey);
             refreshToken = result.Success ? result.Value : null;
         }
         catch
@@ -166,8 +165,8 @@ public class FirebaseTokenProvider : ITokenProvider
 
     private async Task StoreTokensAsync(string idToken, string refreshToken)
     {
-        await _localStorage.SetAsync(IdTokenKey, idToken);
-        await _localStorage.SetAsync(RefreshTokenKey, refreshToken);
+        await _tokenStorage.SetAsync(IdTokenKey, idToken);
+        await _tokenStorage.SetAsync(RefreshTokenKey, refreshToken);
     }
 
     private async Task<string> ParseFirebaseErrorAsync(HttpResponseMessage response)
@@ -185,7 +184,7 @@ public class FirebaseTokenProvider : ITokenProvider
         }
     }
 
-    private static string MapFirebaseErrorCode(string errorCode) => errorCode switch
+    internal static string MapFirebaseErrorCode(string errorCode) => errorCode switch
     {
         "EMAIL_NOT_FOUND" => "Email ou senha incorretos.",
         "INVALID_PASSWORD" => "Email ou senha incorretos.",

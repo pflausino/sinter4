@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Web.Services;
 
 namespace Web.Components.Pages;
@@ -8,6 +9,7 @@ public partial class Login
 {
     [Inject] private ITokenProvider TokenProvider { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
+    [Inject] private AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
 
     private LoginModel Model { get; set; } = new();
     private bool IsSubmitting { get; set; }
@@ -25,6 +27,10 @@ public partial class Login
             var result = await TokenProvider.SignInAsync(Model.Email, Model.Password);
             if (result.Success)
             {
+                var authProvider = (FirebaseAuthStateProvider)AuthStateProvider;
+                authProvider.NotifyStateChanged();
+                // Wait for the auth state to propagate before navigating
+                await authProvider.GetAuthenticationStateAsync();
                 Navigation.NavigateTo("/dashboard");
             }
             else
