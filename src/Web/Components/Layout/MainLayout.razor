@@ -7,7 +7,18 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <AuthorizeView>
+                <Authorized>
+                    <span class="me-3">@context.User.Identity?.Name</span>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="HandleLogoutAsync" disabled="@IsLoggingOut" aria-label="Sair">
+                        @if (IsLoggingOut)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        }
+                        Sair
+                    </button>
+                </Authorized>
+            </AuthorizeView>
         </div>
 
         <article class="content px-4">

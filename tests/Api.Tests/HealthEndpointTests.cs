@@ -1,43 +1,16 @@
 using System.Net;
 using System.Net.Http.Json;
-using Infrastructure.Data;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
 using Shared.Dtos;
 
 namespace Api.Tests;
 
-public class HealthEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class HealthEndpointTests : IClassFixture<CustomWebApplicationFactory>
 {
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly CustomWebApplicationFactory _factory;
 
-    public HealthEndpointTests(WebApplicationFactory<Program> factory)
+    public HealthEndpointTests(CustomWebApplicationFactory factory)
     {
-        _factory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureServices(services =>
-            {
-                // Remove TODOS os registros do EF Core para evitar conflito de providers
-                var efCoreDescriptors = services
-                    .Where(d => d.ServiceType.FullName != null
-                        && (d.ServiceType.FullName.Contains("EntityFrameworkCore")
-                            || d.ServiceType.FullName.Contains("EntityFramework")
-                            || d.ServiceType == typeof(AppDbContext)
-                            || d.ServiceType == typeof(DbContextOptions<AppDbContext>)
-                            || d.ServiceType == typeof(DbContextOptions)))
-                    .ToList();
-
-                foreach (var descriptor in efCoreDescriptors)
-                    services.Remove(descriptor);
-
-                // Registra AppDbContext com InMemory provider (sem conflito com Npgsql)
-                services.AddDbContext<AppDbContext>(options =>
-                    options.UseInMemoryDatabase("HealthTestDb"));
-            });
-        });
+        _factory = factory;
     }
 
     [Fact]

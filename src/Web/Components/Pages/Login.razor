@@ -12,15 +12,22 @@
 
             <div class="form-group">
                 <label for="email">Email</label>
-                <InputText id="email" @bind-Value="Model.Email" type="email" placeholder="Email" maxlength="254" />
+                <InputText id="email" @bind-Value="Model.Email" @bind-Value:after="OnFieldChanged" type="email" placeholder="Email" maxlength="254" />
                 <ValidationMessage For="() => Model.Email" />
             </div>
 
             <div class="form-group">
                 <label for="password">Senha</label>
-                <InputText id="password" @bind-Value="Model.Password" type="password" placeholder="Senha" />
+                <InputText id="password" @bind-Value="Model.Password" @bind-Value:after="OnFieldChanged" type="password" placeholder="Senha" />
                 <ValidationMessage For="() => Model.Password" />
             </div>
+
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <div class="error-message" role="alert" aria-live="polite">
+                    @ErrorMessage
+                </div>
+            }
 
             <button type="submit" class="btn-entrar" disabled="@IsSubmitting">
                 @if (IsSubmitting)

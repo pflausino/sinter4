@@ -1,10 +1,25 @@
 using Bunit;
+using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
 using Web.Components.Pages;
+using Web.Services;
 
 namespace Web.Tests.Components.Pages;
 
 public class LoginComponentTests : BunitContext
 {
+    private readonly ITokenProvider _tokenProvider;
+    private readonly TaskCompletionSource<AuthResult> _signInTcs = new();
+
+    public LoginComponentTests()
+    {
+        _tokenProvider = Substitute.For<ITokenProvider>();
+        // Default: SignInAsync never completes (keeps IsSubmitting = true for loading state tests)
+        _tokenProvider.SignInAsync(Arg.Any<string>(), Arg.Any<string>())
+            .Returns(_signInTcs.Task);
+        Services.AddSingleton(_tokenProvider);
+    }
+
     [Fact]
     public void LoginPage_RendersLogo_EmailInput_PasswordInput_AndEntrarButton()
     {
@@ -100,6 +115,7 @@ public class LoginComponentTests : BunitContext
         passwordInput.Change("password123");
 
         // Act - submit the form to trigger IsSubmitting = true
+        // Since SignInAsync never completes, IsSubmitting stays true
         var form = cut.Find("form");
         form.Submit();
 

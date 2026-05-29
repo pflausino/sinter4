@@ -1,22 +1,59 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Components;
+using Web.Services;
 
 namespace Web.Components.Pages;
 
 public partial class Login
 {
+    [Inject] private ITokenProvider TokenProvider { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
     private LoginModel Model { get; set; } = new();
     private bool IsSubmitting { get; set; }
+    private string? ErrorMessage { get; set; }
 
     private async Task HandleValidSubmit()
     {
         IsSubmitting = true;
+        ErrorMessage = null;
         StateHasChanged();
 
-        // Simulate async operation (future auth call)
-        await Task.Delay(1500);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        try
+        {
+            var result = await TokenProvider.SignInAsync(Model.Email, Model.Password);
+            if (result.Success)
+            {
+                Navigation.NavigateTo("/dashboard");
+            }
+            else
+            {
+                ErrorMessage = result.ErrorMessage;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            ErrorMessage = "O serviço está demorando para responder. Tente novamente.";
+        }
+        catch
+        {
+            ErrorMessage = "Serviço indisponível. Tente novamente mais tarde.";
+        }
+        finally
+        {
+            IsSubmitting = false;
+            StateHasChanged();
+        }
+    }
 
-        IsSubmitting = false;
-        StateHasChanged();
+    private void OnFieldChanged()
+    {
+        if (ErrorMessage is not null)
+        {
+            ErrorMessage = null;
+            StateHasChanged();
+        }
     }
 
     public sealed class LoginModel

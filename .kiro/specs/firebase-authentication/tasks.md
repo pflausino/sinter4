@@ -6,19 +6,19 @@ Integrate Firebase Authentication into SinterPrints as the sole identity provide
 
 ## Tasks
 
-- [ ] 1. Firebase Admin SDK initialization and Infrastructure setup
-  - [ ] 1.1 Add FirebaseAdmin NuGet package to `src/Infrastructure/Infrastructure.csproj` and create `src/Infrastructure/Auth/FirebaseInitializer.cs`
+- [x] 1. Firebase Admin SDK initialization and Infrastructure setup
+  - [x] 1.1 Add FirebaseAdmin NuGet package to `src/Infrastructure/Infrastructure.csproj` and create `src/Infrastructure/Auth/FirebaseInitializer.cs`
     - Add `FirebaseAdmin` package reference
     - Implement static `Initialize(IConfiguration)` method that reads `Firebase:ServiceAccountPath`, validates file existence, loads `GoogleCredential`, and calls `FirebaseApp.Create()`
     - Throw descriptive exceptions for missing config key, missing file, and invalid credentials
     - _Requirements: 2.1, 2.3, 2.4, 6.4, 6.5_
 
-  - [ ] 1.2 Create `src/Infrastructure/Auth/IAuthService.cs` and `src/Infrastructure/Auth/FirebaseAuthService.cs`
+  - [x] 1.2 Create `src/Infrastructure/Auth/IAuthService.cs` and `src/Infrastructure/Auth/FirebaseAuthService.cs`
     - Define `IAuthService` interface (empty placeholder for future admin operations)
     - Implement `FirebaseAuthService` as internal empty class
     - _Requirements: 2.5_
 
-  - [ ] 1.3 Update `src/Infrastructure/DependencyInjection.cs` to call `FirebaseInitializer.Initialize()` and register `IAuthService`
+  - [x] 1.3 Update `src/Infrastructure/DependencyInjection.cs` to call `FirebaseInitializer.Initialize()` and register `IAuthService`
     - Call `FirebaseInitializer.Initialize(configuration)` inside `AddInfrastructure`
     - Register `IAuthService` as scoped with `FirebaseAuthService` implementation
     - _Requirements: 2.1, 2.2, 2.5_
@@ -31,20 +31,20 @@ Integrate Firebase Authentication into SinterPrints as the sole identity provide
     - **Property 9: Missing configuration key exception identifies the key**
     - **Validates: Requirements 6.4**
 
-- [ ] 2. API JWT Bearer authentication and authorization setup
-  - [ ] 2.1 Add authentication NuGet packages to `src/Api/Api.csproj` and configure JWT Bearer in `src/Api/Program.cs`
+- [x] 2. API JWT Bearer authentication and authorization setup
+  - [x] 2.1 Add authentication NuGet packages to `src/Api/Api.csproj` and configure JWT Bearer in `src/Api/Program.cs`
     - Add `Microsoft.AspNetCore.Authentication.JwtBearer` package
     - Read `Firebase:ProjectId` from configuration, throw if missing
     - Configure `AddAuthentication().AddJwtBearer()` with Firebase issuer, audience, and 5-minute clock skew
     - Add `app.UseAuthentication()` and `app.UseAuthorization()` to the pipeline
     - _Requirements: 1.1, 1.6, 1.7, 6.1, 6.4_
 
-  - [ ] 2.2 Implement custom `JwtBearerEvents` for structured 401 JSON responses
+  - [x] 2.2 Implement custom `JwtBearerEvents` for structured 401 JSON responses
     - Handle `OnChallenge` event to produce JSON with `error` and `message` fields
     - Map `SecurityTokenExpiredException` → `"token_expired"`, present but invalid → `"invalid_token"`, missing header → `"missing_token"`
     - _Requirements: 1.3, 1.4, 1.5_
 
-  - [ ] 2.3 Add `"Authenticated"` authorization policy via `AddAuthorizationBuilder()`
+  - [x] 2.3 Add `"Authenticated"` authorization policy via `AddAuthorizationBuilder()`
     - Single policy: `RequireAuthenticatedUser()`
     - Apply policy to protected endpoint groups
     - _Requirements: 5.5_
@@ -69,16 +69,16 @@ Integrate Firebase Authentication into SinterPrints as the sole identity provide
     - **Property 8: Authenticated policy accepts any authenticated user**
     - **Validates: Requirements 5.5**
 
-- [ ] 3. Checkpoint - Ensure backend compiles and tests pass
+- [x] 3. Checkpoint - Ensure backend compiles and tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 4. Frontend authentication services
-  - [ ] 4.1 Create `src/Web/Services/ITokenProvider.cs` with `AuthResult` record
+- [x] 4. Frontend authentication services
+  - [x] 4.1 Create `src/Web/Services/ITokenProvider.cs` with `AuthResult` record
     - Define `SignInAsync`, `GetTokenAsync`, `SignOutAsync`, `RefreshTokenAsync` methods
     - Define `AuthResult(bool Success, string? Token, string? ErrorMessage)` record
     - _Requirements: 3.1, 3.2_
 
-  - [ ] 4.2 Create `src/Web/Services/FirebaseTokenProvider.cs` implementing `ITokenProvider`
+  - [x] 4.2 Create `src/Web/Services/FirebaseTokenProvider.cs` implementing `ITokenProvider`
     - Use `HttpClient` to call Firebase REST API (`identitytoolkit.googleapis.com`) for sign-in
     - Use `securetoken.googleapis.com` for token refresh
     - Store tokens in `ProtectedLocalStorage`
@@ -87,7 +87,7 @@ Integrate Firebase Authentication into SinterPrints as the sole identity provide
     - Read `Firebase:ApiKey` from configuration
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.6_
 
-  - [ ] 4.3 Create `src/Web/Services/FirebaseAuthStateProvider.cs` extending `AuthenticationStateProvider`
+  - [x] 4.3 Create `src/Web/Services/FirebaseAuthStateProvider.cs` extending `AuthenticationStateProvider`
     - Read token from `ProtectedLocalStorage` on initialization
     - Parse JWT claims to build `ClaimsPrincipal`
     - Expose `NotifyAuthenticationStateChanged` when tokens change
@@ -95,7 +95,7 @@ Integrate Firebase Authentication into SinterPrints as the sole identity provide
     - On refresh failure, clear state and redirect to `/login`
     - _Requirements: 3.5, 3.6, 3.7_
 
-  - [ ] 4.4 Register authentication services in `src/Web/Program.cs`
+  - [x] 4.4 Register authentication services in `src/Web/Program.cs`
     - Register `ITokenProvider` as scoped with `FirebaseTokenProvider`
     - Register `AuthenticationStateProvider` as scoped with `FirebaseAuthStateProvider`
     - Add `CascadingAuthenticationState` to the component tree
@@ -117,11 +117,11 @@ Integrate Firebase Authentication into SinterPrints as the sole identity provide
     - Test refresh retry logic (2 retries, 2-second delay)
     - _Requirements: 3.1, 3.3, 3.4, 3.6_
 
-- [ ] 5. Checkpoint - Ensure frontend services compile and tests pass
+- [x] 5. Checkpoint - Ensure frontend services compile and tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Login page integration and logout
-  - [ ] 6.1 Update `src/Web/Components/Pages/Login.razor.cs` to use `ITokenProvider`
+- [x] 6. Login page integration and logout
+  - [x] 6.1 Update `src/Web/Components/Pages/Login.razor.cs` to use `ITokenProvider`
     - Inject `ITokenProvider` and `NavigationManager`
     - Replace simulated delay with `TokenProvider.SignInAsync(email, password)`
     - Navigate to `/dashboard` on success
@@ -130,7 +130,7 @@ Integrate Firebase Authentication into SinterPrints as the sole identity provide
     - Clear error message on field modification (`OnFieldChanged`)
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8_
 
-  - [ ] 6.2 Implement logout in `ITokenProvider.SignOutAsync` and wire to UI
+  - [x] 6.2 Implement logout in `ITokenProvider.SignOutAsync` and wire to UI
     - Clear JWT and refresh token from `ProtectedLocalStorage`
     - Notify `FirebaseAuthStateProvider` to transition to unauthenticated state
     - Redirect to `/login` within 1 second
@@ -145,32 +145,32 @@ Integrate Firebase Authentication into SinterPrints as the sole identity provide
     - Test timeout behavior at 30 seconds
     - _Requirements: 7.1, 7.3, 7.4, 7.5, 7.6, 7.7_
 
-- [ ] 7. Route protection with AuthorizeRouteView
-  - [ ] 7.1 Configure `AuthorizeRouteView` in `src/Web/Components/Routes.razor` (or equivalent app root)
+- [x] 7. Route protection with AuthorizeRouteView
+  - [x] 7.1 Configure `AuthorizeRouteView` in `src/Web/Components/Routes.razor` (or equivalent app root)
     - Replace `RouteView` with `AuthorizeRouteView`
     - Configure `NotAuthorized` to redirect to `/login`
     - Configure `Authorizing` to show a loading indicator
     - _Requirements: 5.1, 5.2, 5.3_
 
-  - [ ] 7.2 Add `[Authorize]` attribute to protected pages and ensure `/login` remains public
+  - [x] 7.2 Add `[Authorize]` attribute to protected pages and ensure `/login` remains public
     - Mark pages that require authentication with `@attribute [Authorize]`
     - Ensure Login page and any public pages do NOT have the attribute
     - _Requirements: 5.1, 5.4_
 
-- [ ] 8. Configuration and secrets management
-  - [ ] 8.1 Update `src/Api/appsettings.json` with empty Firebase configuration section
+- [x] 8. Configuration and secrets management
+  - [x] 8.1 Update `src/Api/appsettings.json` with empty Firebase configuration section
     - Add `"Firebase": { "ProjectId": "", "ServiceAccountPath": "", "ApiKey": "" }` with empty values
     - _Requirements: 6.1, 6.6_
 
-  - [ ] 8.2 Update `src/Web/appsettings.json` (or shared config) with Firebase `ApiKey` placeholder
+  - [x] 8.2 Update `src/Web/appsettings.json` (or shared config) with Firebase `ApiKey` placeholder
     - Add `"Firebase": { "ApiKey": "" }` with empty value for frontend use
     - _Requirements: 6.1, 6.6_
 
-  - [ ] 8.3 Document User Secrets setup in a README or code comment for development environment
+  - [x] 8.3 Document User Secrets setup in a README or code comment for development environment
     - Indicate how to set `Firebase:ProjectId`, `Firebase:ServiceAccountPath`, and `Firebase:ApiKey` via `dotnet user-secrets`
     - _Requirements: 6.2, 6.3_
 
-- [ ] 9. Final checkpoint - Ensure full solution compiles and all tests pass
+- [x] 9. Final checkpoint - Ensure full solution compiles and all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

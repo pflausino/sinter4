@@ -2,7 +2,10 @@ using Bunit;
 using FsCheck;
 using FsCheck.Fluent;
 using FsCheck.Xunit;
+using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
 using Web.Components.Pages;
+using Web.Services;
 
 namespace Web.Tests;
 
@@ -43,6 +46,14 @@ public class LoginLoadingStatePropertyTests
         var password = passwords[passwordIndex.Get % passwords.Length];
 
         using var ctx = new BunitContext();
+
+        // Create a token provider that never completes (to keep IsSubmitting = true)
+        var tcs = new TaskCompletionSource<AuthResult>();
+        var tokenProvider = Substitute.For<ITokenProvider>();
+        tokenProvider.SignInAsync(Arg.Any<string>(), Arg.Any<string>())
+            .Returns(tcs.Task);
+        ctx.Services.AddSingleton(tokenProvider);
+
         var cut = ctx.Render<Login>();
 
         // Fill in valid form data

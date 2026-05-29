@@ -1,3 +1,4 @@
+using Infrastructure.Auth;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -11,6 +12,10 @@ public static class InfrastructureServiceExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        FirebaseInitializer.Initialize(configuration);
+
+        services.AddScoped<IAuthService, FirebaseAuthService>();
+
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
         services.AddDbContext<AppDbContext>(options =>

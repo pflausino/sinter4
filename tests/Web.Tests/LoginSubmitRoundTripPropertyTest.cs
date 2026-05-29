@@ -1,7 +1,10 @@
 using Bunit;
 using FsCheck;
 using FsCheck.Xunit;
+using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
 using Web.Components.Pages;
+using Web.Services;
 
 namespace Web.Tests;
 
@@ -41,6 +44,12 @@ public class LoginSubmitRoundTripPropertyTest
         var password = passwords[passwordIndex.Get % passwords.Length];
 
         using var ctx = new BunitContext();
+
+        var tokenProvider = Substitute.For<ITokenProvider>();
+        tokenProvider.SignInAsync(Arg.Any<string>(), Arg.Any<string>())
+            .Returns(Task.FromResult(new AuthResult(true, "fake-token", null)));
+        ctx.Services.AddSingleton(tokenProvider);
+
         var cut = ctx.Render<Login>();
 
         // Fill in valid form data
