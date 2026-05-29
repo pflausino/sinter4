@@ -68,7 +68,7 @@ Implement the SinterPrints login page as a Blazor component with isolated CSS, c
     - Ensure the test project targets net10.0
     - _Requirements: 8.1_
 
-  - [ ]* 4.2 Write bUnit tests for component rendering and behavior
+  - [x] 4.2 Write bUnit tests for component rendering and behavior
     - Test: login page renders logo, email input, password input, and Entrar button
     - Test: email input has type="email" and associated label
     - Test: submitting empty form shows validation error messages
@@ -77,30 +77,30 @@ Implement the SinterPrints login page as a Blazor component with isolated CSS, c
     - Test: button shows "Entrar" when IsSubmitting is false
     - _Requirements: 4.1, 4.4, 4.5, 5.1, 5.3, 5.4, 6.1, 7.1, 7.2, 7.3, 8.4, 8.5, 10.1_
 
-  - [ ]* 4.3 Write property test for LoginModel valid inputs
+  - [x] 4.3 Write property test for LoginModel valid inputs
     - **Property 1: LoginModel validation accepts only valid inputs**
     - Generate random valid email/password pairs (email with valid format ≤256 chars, password 6–128 chars)
     - Assert Validator.TryValidateObject returns zero errors
     - **Validates: Requirements 8.4, 8.5**
 
-  - [ ]* 4.4 Write property test for invalid email rejection
+  - [x] 4.4 Write property test for invalid email rejection
     - **Property 2: Invalid email format is rejected**
     - Generate random strings that are not valid email addresses
     - Assert validation fails with email-format error message
     - **Validates: Requirements 4.5, 8.4**
 
-  - [ ]* 4.5 Write property test for short password rejection
+  - [x] 4.5 Write property test for short password rejection
     - **Property 3: Short password is rejected**
     - Generate random non-empty strings with length 1–5
     - Assert validation fails with minimum-length error message
     - **Validates: Requirements 5.4, 8.4**
 
-  - [ ]* 4.6 Write property test for loading state idempotence
+  - [x] 4.6 Write property test for loading state idempotence
     - **Property 4: Loading state disables submission**
     - Verify that when IsSubmitting is true, calling HandleValidSubmit does not initiate a new submission
     - **Validates: Requirements 7.1, 7.4**
 
-  - [ ]* 4.7 Write property test for submit round-trip state restoration
+  - [x] 4.7 Write property test for submit round-trip state restoration
     - **Property 5: Submit round-trip restores initial state**
     - Trigger valid submit, await completion, assert IsSubmitting returns to false
     - **Validates: Requirements 7.3**

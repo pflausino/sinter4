@@ -1,15 +1,13 @@
 {
   "enabled": true,
   "name": "Start Application",
-  "description": "Sobe o PostgreSQL via Docker e inicia a API com dotnet run",
-  "version": "1",
+  "description": "Sobe o PostgreSQL via Docker e inicia a API e o Web em background",
+  "version": "1.0.0",
   "when": {
     "type": "userTriggered"
   },
   "then": {
-    "type": "runCommand",
-    "command": "bash -c '(docker compose ps --status running --format \"{{.Name}}\" | grep -q postgres || docker compose up -d) && dotnet run --project src/Api'"
-  },
-  "workspaceFolderName": "SinterPrints4",
-  "shortName": "start-application"
+    "type": "askAgent",
+    "prompt": "Suba a aplicação SinterPrints seguindo estes passos: 1) Verifique se o PostgreSQL já está rodando com 'docker compose ps'. Se não estiver, execute 'docker compose up -d' e aguarde ficar healthy. 2) Inicie 'dotnet run --project src/Api' como processo em background. 3) Inicie 'dotnet run --project src/Web' como processo em background. 4) Confirme que ambos os processos estão rodando."
+  }
 }
