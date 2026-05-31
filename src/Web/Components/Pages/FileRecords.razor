@@ -1,0 +1,51 @@
+@page "/file-records"
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+<PageTitle>Fichas de Arquivo</PageTitle>
+
+<h1>Fichas de Arquivo</h1>
+
+<div class="mb-3">
+    <a href="/file-records/new" class="btn btn-primary">Novo</a>
+</div>
+
+@if (IsLoading)
+{
+    <p>Carregando...</p>
+}
+else if (Records is null || Records.Count == 0)
+{
+    <p>Nenhuma ficha encontrada.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Tipo de Arquivo</th>
+                <th>Cliente</th>
+                <th>Data</th>
+                <th>Nº Disquete</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var record in Records)
+            {
+                <tr>
+                    <td>@record.Name</td>
+                    <td>@record.FileType</td>
+                    <td>@record.Client</td>
+                    <td>@record.Date.ToString("dd/MM/yyyy")</td>
+                    <td>@(record.FlopDiskNumber?.ToString() ?? "—")</td>
+                    <td>
+                        <a href="@($"/file-records/{record.Id}/edit")" class="btn btn-sm btn-outline-secondary">Editar</a>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteRecord(record.Id)">Excluir</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

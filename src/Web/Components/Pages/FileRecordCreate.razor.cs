@@ -1,0 +1,77 @@
+using System.ComponentModel.DataAnnotations;
+using System.Net.Http.Json;
+using Domain.Enums;
+using Microsoft.AspNetCore.Components;
+using Shared.Dtos;
+
+namespace Web.Components.Pages;
+
+public partial class FileRecordCreate
+{
+    [Inject] private IHttpClientFactory HttpClientFactory { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private FileRecordCreateModel Model { get; set; } = new();
+    private bool IsSubmitting { get; set; }
+    private string? ErrorMessage { get; set; }
+
+    private async Task HandleValidSubmit()
+    {
+        IsSubmitting = true;
+        ErrorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("Api");
+
+            var request = new CreateFileRecordRequest(
+                Model.Name,
+                Model.FileType,
+                Model.FlopDiskNumber,
+                Model.Date,
+                Model.Client
+            );
+
+            var response = await client.PostAsJsonAsync("/api/file-records", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Navigation.NavigateTo("/file-records");
+            }
+            else
+            {
+                ErrorMessage = "Erro ao criar o registro. Tente novamente.";
+            }
+        }
+        catch
+        {
+            ErrorMessage = "Serviço indisponível. Tente novamente mais tarde.";
+        }
+        finally
+        {
+            IsSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    public sealed class FileRecordCreateModel
+    {
+        [Required(ErrorMessage = "O nome é obrigatório.")]
+        [MinLength(1, ErrorMessage = "O nome não pode ser vazio.")]
+        public string Name { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "O tipo de arquivo é obrigatório.")]
+        [EnumDataType(typeof(FileType), ErrorMessage = "Tipo de arquivo inválido.")]
+        public FileType FileType { get; set; } = FileType.CorelDRAW;
+
+        public int? FlopDiskNumber { get; set; }
+
+        [Required(ErrorMessage = "A data é obrigatória.")]
+        public DateTime Date { get; set; } = DateTime.Today;
+
+        [Required(ErrorMessage = "O cliente é obrigatório.")]
+        [MinLength(1, ErrorMessage = "O cliente não pode ser vazio.")]
+        public string Client { get; set; } = string.Empty;
+    }
+}

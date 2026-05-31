@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Api.Endpoints;
+using Api.Services;
 using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -7,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<IFileRecordService, FileRecordService>();
 
 var projectId = builder.Configuration["Firebase:ProjectId"];
 
@@ -61,6 +63,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHealthEndpoints();
+app.MapFileRecordEndpoints();
 
 app.MapGet("/api/me", (HttpContext context) =>
 {

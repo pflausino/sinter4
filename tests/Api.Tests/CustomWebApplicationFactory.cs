@@ -1,10 +1,50 @@
+using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text.Encodings.Web;
 using Infrastructure.Data;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Api.Tests;
+
+/// <summary>
+/// Authentication handler that auto-authenticates all requests in the test environment.
+/// Produces an authenticated ClaimsPrincipal with a NameIdentifier claim.
+/// </summary>
+public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+{
+    public const string SchemeName = "TestScheme";
+    public const string TestUserId = "test-user-id";
+
+    public TestAuthHandler(
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder)
+        : base(options, logger, encoder)
+    {
+    }
+
+    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    {
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, TestUserId),
+            new Claim(ClaimTypes.Name, "Test User"),
+            new Claim(ClaimTypes.Email, "test@example.com")
+        };
+
+        var identity = new ClaimsIdentity(claims, SchemeName);
+        var principal = new ClaimsPrincipal(identity);
+        var ticket = new AuthenticationTicket(principal, SchemeName);
+
+        return Task.FromResult(AuthenticateResult.Success(ticket));
+    }
+}
 
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
@@ -68,6 +108,19 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             // Register AppDbContext with InMemory provider
             services.AddDbContext<AppDbContext>(options =>
                 options.UseInMemoryDatabase("TestDb"));
+        });
+
+        builder.ConfigureTestServices(services =>
+        {
+            // Replace the default authentication scheme with TestAuthHandler
+            // so that all requests are auto-authenticated without real JWT tokens
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
+                options.DefaultChallengeScheme = TestAuthHandler.SchemeName;
+            })
+            .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
+                TestAuthHandler.SchemeName, _ => { });
         });
     }
 }

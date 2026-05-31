@@ -1,0 +1,76 @@
+@page "/file-records/{Id:guid}/edit"
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+<PageTitle>Editar Registro de Arquivo</PageTitle>
+
+<h1>Editar Registro de Arquivo</h1>
+
+@if (IsLoading)
+{
+    <p>Carregando...</p>
+}
+else if (NotFound)
+{
+    <p>Registro não encontrado.</p>
+    <a href="/file-records" class="btn btn-secondary">Voltar</a>
+}
+else
+{
+    <EditForm Model="Model" OnValidSubmit="HandleValidSubmit" FormName="EditFileRecord">
+        <DataAnnotationsValidator />
+
+        <div class="form-group">
+            <label for="name">Nome</label>
+            <InputText id="name" @bind-Value="Model.Name" />
+            <ValidationMessage For="() => Model.Name" />
+        </div>
+
+        <div class="form-group">
+            <label for="fileType">Tipo de Arquivo</label>
+            <InputSelect id="fileType" @bind-Value="Model.FileType">
+                @foreach (var value in Enum.GetValues<Domain.Enums.FileType>())
+                {
+                    <option value="@value">@value</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="() => Model.FileType" />
+        </div>
+
+        <div class="form-group">
+            <label for="flopDiskNumber">Número do Disquete (opcional)</label>
+            <InputNumber id="flopDiskNumber" @bind-Value="Model.FlopDiskNumber" />
+            <ValidationMessage For="() => Model.FlopDiskNumber" />
+        </div>
+
+        <div class="form-group">
+            <label for="date">Data</label>
+            <InputDate id="date" @bind-Value="Model.Date" />
+            <ValidationMessage For="() => Model.Date" />
+        </div>
+
+        <div class="form-group">
+            <label for="client">Cliente</label>
+            <InputText id="client" @bind-Value="Model.Client" />
+            <ValidationMessage For="() => Model.Client" />
+        </div>
+
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <div class="error-message" role="alert" aria-live="polite">
+                @ErrorMessage
+            </div>
+        }
+
+        <button type="submit" disabled="@IsSubmitting">
+            @if (IsSubmitting)
+            {
+                <span>Salvando...</span>
+            }
+            else
+            {
+                <span>Salvar</span>
+            }
+        </button>
+    </EditForm>
+}
