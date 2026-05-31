@@ -19,7 +19,7 @@ RUN dotnet restore src/Api/Api.csproj
 
 # Copy source and build
 COPY src/ src/
-RUN dotnet publish src/Api/Api.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish src/Api/Api.csproj -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
