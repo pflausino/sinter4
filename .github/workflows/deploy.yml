@@ -59,7 +59,7 @@ jobs:
           username: pflausino
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            sleep 5
+            sleep 15
             docker exec sinter-prints-api wget -qO- http://localhost:8080/health || exit 1
-            docker exec sinter-prints-web wget -qO- http://localhost:8080/_framework/blazor.web.js > /dev/null || exit 1
+            docker exec sinter-prints-web wget -qO- http://localhost:8080/health || exit 1
             echo "Deployment verified successfully"

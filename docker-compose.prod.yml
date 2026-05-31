@@ -30,6 +30,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
+      ApiBaseUrl: ${API_BASE_URL}
     depends_on:
       - api
     networks:
