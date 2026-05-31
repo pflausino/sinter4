@@ -1,19 +1,22 @@
 services:
-api:
-  container_name: sinter-prints-api
-  build:
-    context: .
-    dockerfile: Dockerfile.Api
-  restart: unless-stopped
-  env_file:
-    - .env
-  environment:
-    Firebase__ServiceAccountPath: /run/secrets/firebase-service-account.json
-  volumes:
-    - ./secrets/firebase/service-account.json:/run/secrets/firebase-service-account.json:ro
-  networks:
-    - proxy
-    - internal
+  api:
+    container_name: sinter-prints-api
+    build:
+      context: .
+      dockerfile: Dockerfile.Api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      Firebase__ServiceAccountPath: /run/secrets/firebase-service-account.json
+    volumes:
+      - ./secrets/firebase/service-account.json:/run/secrets/firebase-service-account.json:ro
+    networks:
+      - proxy
+      - internal
+
   web:
     container_name: sinter-prints-web
     build:
@@ -22,6 +25,9 @@ api:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
     depends_on:
       - api
     networks:
