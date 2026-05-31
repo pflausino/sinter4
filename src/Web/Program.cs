@@ -56,10 +56,8 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
         | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
 });
 
-// Serve static files early (before antiforgery/routing)
+// Serve static files (including _framework/)
 app.UseStaticFiles();
-
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 
 app.UseAntiforgery();
 
