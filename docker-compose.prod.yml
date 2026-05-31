@@ -1,0 +1,31 @@
+services:
+  api:
+    container_name: sinter-prints-api
+    build:
+      context: .
+      dockerfile: Dockerfile.Api
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - proxy
+      - internal
+
+  web:
+    container_name: sinter-prints-web
+    build:
+      context: .
+      dockerfile: Dockerfile.Web
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - api
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
+  internal:
+    external: true
