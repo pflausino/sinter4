@@ -5,27 +5,79 @@
 
 <PageTitle>Health Check</PageTitle>
 
-<h1>Health Check</h1>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center p-4">
+                    @if (loading)
+                    {
+                        <div class="py-4">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Verificando...</span>
+                            </div>
+                            <p class="text-muted mb-0">Verificando conexão com a API...</p>
+                        </div>
+                    }
+                    else if (errorMessage is not null)
+                    {
+                        <div class="py-3">
+                            <div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="text-danger" viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+                                </svg>
+                            </div>
+                            <h5 class="fw-semibold text-danger mb-2">Conexão falhou</h5>
+                            <p class="text-muted small mb-0">@errorMessage</p>
+                        </div>
+                    }
+                    else if (healthResponse is not null)
+                    {
+                        var isHealthy = healthResponse.Status == "Healthy";
 
-<p>Status de comunicação com a API.</p>
+                        <div class="py-3">
+                            @if (isHealthy)
+                            {
+                                <div class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="text-success" viewBox="0 0 16 16">
+                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                                        <path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05"/>
+                                    </svg>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="rounded-circle bg-warning bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="text-warning" viewBox="0 0 16 16">
+                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                                        <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.553.553 0 0 1-1.1 0z"/>
+                                    </svg>
+                                </div>
+                            }
 
-@if (loading)
-{
-    <p><em>Verificando...</em></p>
-}
-else if (errorMessage is not null)
-{
-    <div class="alert alert-danger" role="alert">
-        <strong>Erro de conexão:</strong> @errorMessage
+                            <h5 class="fw-semibold @(isHealthy ? "text-success" : "text-warning") mb-1">
+                                @(isHealthy ? "Tudo funcionando" : "Degradado")
+                            </h5>
+                            <p class="text-muted small mb-3">API respondendo normalmente</p>
+
+                            <div class="border rounded-3 p-3 text-start bg-light">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-muted small">Status</span>
+                                    <span class="badge @(isHealthy ? "bg-success" : "bg-warning text-dark")">@healthResponse.Status</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-muted small">Última verificação</span>
+                                    <span class="small fw-medium">@healthResponse.Timestamp.ToString("dd/MM/yyyy HH:mm:ss")</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
     </div>
-}
-else if (healthResponse is not null)
-{
-    <div class="alert @(healthResponse.Status == "Healthy" ? "alert-success" : "alert-warning")" role="alert">
-        <p><strong>Status:</strong> @healthResponse.Status</p>
-        <p><strong>Timestamp:</strong> @healthResponse.Timestamp.ToString("yyyy-MM-dd HH:mm:ss") UTC</p>
-    </div>
-}
+</div>
 
 @code {
     private Shared.Dtos.HealthCheckResponse? healthResponse;
