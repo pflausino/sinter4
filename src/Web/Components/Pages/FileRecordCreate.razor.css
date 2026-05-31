@@ -1,0 +1,134 @@
+/* Page Header */
+.page-header {
+    margin-bottom: 1.5rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+    color: #6c757d;
+    text-decoration: none;
+    margin-bottom: 0.5rem;
+}
+
+.back-link:hover {
+    color: #1b6ec2;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #1a1a2e;
+}
+
+.page-subtitle {
+    margin: 0.25rem 0 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Form Card */
+.form-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1.5rem;
+    max-width: 640px;
+}
+
+/* Form Grid */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+.field-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.35rem;
+}
+
+.required {
+    color: #dc3545;
+}
+
+/* Alert */
+.alert-error {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-top: 1.25rem;
+    background: #fff5f5;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    color: #991b1b;
+    font-size: 0.875rem;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #f0f0f0;
+}
+
+.btn-submit {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 500;
+}
+
+/* Spinner */
+.spinner-sm {
+    display: inline-block;
+    width: 0.9rem;
+    height: 0.9rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .form-card {
+        padding: 1rem;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .form-actions .btn {
+        text-align: center;
+    }
+}

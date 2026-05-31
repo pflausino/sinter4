@@ -1,63 +1,78 @@
 @page "/file-records/new"
 @attribute [Authorize]
+@rendermode InteractiveServer
 
-<PageTitle>Novo Registro de Arquivo</PageTitle>
+<PageTitle>Nova Ficha de Arquivo</PageTitle>
 
-<h1>Novo Registro de Arquivo</h1>
+<div class="page-header">
+    <a href="/file-records" class="back-link" aria-label="Voltar para lista de fichas">
+        <span aria-hidden="true">←</span> Fichas de Arquivo
+    </a>
+    <h1>Nova Ficha</h1>
+    <p class="page-subtitle">Cadastre um novo registro de arte final</p>
+</div>
 
-<EditForm Model="Model" OnValidSubmit="HandleValidSubmit" FormName="CreateFileRecord">
-    <DataAnnotationsValidator />
+<div class="form-card">
+    <EditForm Model="Model" OnValidSubmit="HandleValidSubmit" FormName="CreateFileRecord">
+        <DataAnnotationsValidator />
 
-    <div class="form-group">
-        <label for="name">Nome</label>
-        <InputText id="name" @bind-Value="Model.Name" />
-        <ValidationMessage For="() => Model.Name" />
-    </div>
+        <div class="form-grid">
+            <div class="field full-width">
+                <label for="name" class="field-label">Nome <span class="required" aria-hidden="true">*</span></label>
+                <InputText id="name" @bind-Value="Model.Name" class="form-control" placeholder="Ex: Logo Empresa XYZ" />
+                <ValidationMessage For="() => Model.Name" />
+            </div>
 
-    <div class="form-group">
-        <label for="fileType">Tipo de Arquivo</label>
-        <InputSelect id="fileType" @bind-Value="Model.FileType">
-            @foreach (var value in Enum.GetValues<Domain.Enums.FileType>())
-            {
-                <option value="@value">@value</option>
-            }
-        </InputSelect>
-        <ValidationMessage For="() => Model.FileType" />
-    </div>
+            <div class="field">
+                <label for="fileType" class="field-label">Tipo de Arquivo <span class="required" aria-hidden="true">*</span></label>
+                <InputSelect id="fileType" @bind-Value="Model.FileType" class="form-select">
+                    @foreach (var value in Enum.GetValues<Domain.Enums.FileType>())
+                    {
+                        <option value="@value">@value</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => Model.FileType" />
+            </div>
 
-    <div class="form-group">
-        <label for="flopDiskNumber">Número do Disquete (opcional)</label>
-        <InputNumber id="flopDiskNumber" @bind-Value="Model.FlopDiskNumber" />
-        <ValidationMessage For="() => Model.FlopDiskNumber" />
-    </div>
+            <div class="field">
+                <label for="client" class="field-label">Cliente <span class="required" aria-hidden="true">*</span></label>
+                <InputText id="client" @bind-Value="Model.Client" class="form-control" placeholder="Nome do cliente" />
+                <ValidationMessage For="() => Model.Client" />
+            </div>
 
-    <div class="form-group">
-        <label for="date">Data</label>
-        <InputDate id="date" @bind-Value="Model.Date" />
-        <ValidationMessage For="() => Model.Date" />
-    </div>
+            <div class="field">
+                <label for="date" class="field-label">Data <span class="required" aria-hidden="true">*</span></label>
+                <InputDate id="date" @bind-Value="Model.Date" class="form-control" />
+                <ValidationMessage For="() => Model.Date" />
+            </div>
 
-    <div class="form-group">
-        <label for="client">Cliente</label>
-        <InputText id="client" @bind-Value="Model.Client" />
-        <ValidationMessage For="() => Model.Client" />
-    </div>
-
-    @if (!string.IsNullOrEmpty(ErrorMessage))
-    {
-        <div class="error-message" role="alert" aria-live="polite">
-            @ErrorMessage
+            <div class="field">
+                <label for="flopDiskNumber" class="field-label">Número do Disquete</label>
+                <InputNumber id="flopDiskNumber" @bind-Value="Model.FlopDiskNumber" class="form-control" placeholder="Opcional" />
+                <ValidationMessage For="() => Model.FlopDiskNumber" />
+            </div>
         </div>
-    }
 
-    <button type="submit" disabled="@IsSubmitting">
-        @if (IsSubmitting)
+        @if (!string.IsNullOrEmpty(ErrorMessage))
         {
-            <span>Salvando...</span>
+            <div class="alert-error" role="alert" aria-live="polite">
+                <span aria-hidden="true">⚠️</span> @ErrorMessage
+            </div>
         }
-        else
-        {
-            <span>Salvar</span>
-        }
-    </button>
-</EditForm>
+
+        <div class="form-actions">
+            <a href="/file-records" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary btn-submit" disabled="@IsSubmitting">
+                @if (IsSubmitting)
+                {
+                    <span class="spinner-sm" aria-hidden="true"></span>
+                    <span>Salvando...</span>
+                }
+                else
+                {
+                    <span>Salvar Ficha</span>
+                }
+            </button>
+        </div>
+    </EditForm>
+</div>

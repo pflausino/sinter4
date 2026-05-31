@@ -4,7 +4,7 @@ EXPOSE 8080
 
 # Enable globalization support on Alpine
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
-RUN apk add --no-cache icu-libs
+RUN apk add --no-cache icu-libs krb5-libs
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 WORKDIR /src

@@ -12,6 +12,7 @@ public partial class FileRecords
 
     private List<FileRecordResponse>? Records { get; set; }
     private bool IsLoading { get; set; } = true;
+    private bool HasError { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -21,6 +22,7 @@ public partial class FileRecords
     private async Task LoadRecords()
     {
         IsLoading = true;
+        HasError = false;
 
         try
         {
@@ -29,7 +31,8 @@ public partial class FileRecords
         }
         catch
         {
-            Records = [];
+            Records = null;
+            HasError = true;
         }
         finally
         {

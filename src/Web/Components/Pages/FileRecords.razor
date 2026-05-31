@@ -4,48 +4,117 @@
 
 <PageTitle>Fichas de Arquivo</PageTitle>
 
-<h1>Fichas de Arquivo</h1>
-
-<div class="mb-3">
-    <a href="/file-records/new" class="btn btn-primary">Novo</a>
+<div class="page-header">
+    <div>
+        <h1>Fichas de Arquivo</h1>
+        <p class="page-subtitle">Gerencie seus registros de arte final</p>
+    </div>
+    <a href="/file-records/new" class="btn btn-primary btn-new" aria-label="Criar nova ficha de arquivo">
+        <span class="btn-icon" aria-hidden="true">+</span>
+        <span>Nova Ficha</span>
+    </a>
 </div>
 
 @if (IsLoading)
 {
-    <p>Carregando...</p>
+    <div class="loading-state" role="status" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Carregando fichas...</p>
+    </div>
+}
+else if (HasError)
+{
+    <div class="error-state" role="alert">
+        <div class="state-icon" aria-hidden="true">⚠️</div>
+        <p class="state-title">Erro ao carregar fichas</p>
+        <p class="state-description">Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.</p>
+        <button class="btn btn-outline-primary" @onclick="LoadRecords">Tentar novamente</button>
+    </div>
 }
 else if (Records is null || Records.Count == 0)
 {
-    <p>Nenhuma ficha encontrada.</p>
+    <div class="empty-state" role="status">
+        <div class="state-icon" aria-hidden="true">📁</div>
+        <p class="state-title">Nenhuma ficha cadastrada</p>
+        <p class="state-description">Comece adicionando seu primeiro registro de arte final.</p>
+        <a href="/file-records/new" class="btn btn-primary">Criar primeira ficha</a>
+    </div>
 }
 else
 {
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>Tipo de Arquivo</th>
-                <th>Cliente</th>
-                <th>Data</th>
-                <th>Nº Disquete</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var record in Records)
-            {
+    <div class="records-summary">
+        <span>@Records.Count @(Records.Count == 1 ? "registro" : "registros")</span>
+    </div>
+
+    @* Desktop table view *@
+    <div class="table-container">
+        <table class="records-table" aria-label="Lista de fichas de arquivo">
+            <thead>
                 <tr>
-                    <td>@record.Name</td>
-                    <td>@record.FileType</td>
-                    <td>@record.Client</td>
-                    <td>@record.Date.ToString("dd/MM/yyyy")</td>
-                    <td>@(record.FlopDiskNumber?.ToString() ?? "—")</td>
-                    <td>
-                        <a href="@($"/file-records/{record.Id}/edit")" class="btn btn-sm btn-outline-secondary">Editar</a>
-                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteRecord(record.Id)">Excluir</button>
-                    </td>
+                    <th scope="col">Nome</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Cliente</th>
+                    <th scope="col">Data</th>
+                    <th scope="col" class="col-disk">Nº Disquete</th>
+                    <th scope="col" class="col-actions">Ações</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var record in Records)
+                {
+                    <tr>
+                        <td class="cell-name">@record.Name</td>
+                        <td><span class="badge-type badge-@record.FileType.ToString().ToLowerInvariant()">@record.FileType</span></td>
+                        <td>@record.Client</td>
+                        <td class="cell-date">@record.Date.ToString("dd/MM/yyyy")</td>
+                        <td class="col-disk">@(record.FlopDiskNumber?.ToString() ?? "—")</td>
+                        <td class="col-actions">
+                            <div class="action-group">
+                                <a href="@($"/file-records/{record.Id}/edit")" class="btn-action btn-edit" title="Editar" aria-label="Editar @record.Name">
+                                    ✏️
+                                </a>
+                                <button class="btn-action btn-delete" @onclick="() => DeleteRecord(record.Id)" title="Excluir" aria-label="Excluir @record.Name">
+                                    🗑️
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @* Mobile card view *@
+    <div class="cards-container">
+        @foreach (var record in Records)
+        {
+            <div class="record-card">
+                <div class="card-header">
+                    <span class="card-name">@record.Name</span>
+                    <span class="badge-type badge-@record.FileType.ToString().ToLowerInvariant()">@record.FileType</span>
+                </div>
+                <div class="card-details">
+                    <div class="card-detail">
+                        <span class="detail-label">Cliente</span>
+                        <span class="detail-value">@record.Client</span>
+                    </div>
+                    <div class="card-detail">
+                        <span class="detail-label">Data</span>
+                        <span class="detail-value">@record.Date.ToString("dd/MM/yyyy")</span>
+                    </div>
+                    @if (record.FlopDiskNumber.HasValue)
+                    {
+                        <div class="card-detail">
+                            <span class="detail-label">Disquete</span>
+                            <span class="detail-value">#@record.FlopDiskNumber</span>
+                        </div>
+                    }
+                </div>
+                <div class="card-actions">
+                    <a href="@($"/file-records/{record.Id}/edit")" class="btn btn-sm btn-outline-secondary" aria-label="Editar @record.Name">Editar</a>
+                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteRecord(record.Id)" aria-label="Excluir @record.Name">Excluir</button>
+                </div>
+            </div>
+        }
+    </div>
 }
