@@ -10,6 +10,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=sinterdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       Firebase__ServiceAccountPath: /run/secrets/firebase-service-account.json
       Firebase__ProjectId: sinter-prints-3
     volumes:
