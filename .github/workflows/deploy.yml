@@ -36,7 +36,7 @@ jobs:
           host: pflausino.xyz
           username: pflausino
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: "src/,docker-compose.prod.yml"
+          source: "src/,docker-compose.prod.yml,Dockerfile.Api,Dockerfile.Web"
           target: "/opt/apps/sinter-prints"
 
       - name: Build and deploy on VPS

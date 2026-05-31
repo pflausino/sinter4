@@ -2,6 +2,10 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS base
 WORKDIR /app
 EXPOSE 8080
 
+# Enable globalization support on Alpine
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+RUN apk add --no-cache icu-libs
+
 FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 WORKDIR /src
 
@@ -19,6 +23,11 @@ RUN dotnet publish src/Api/Api.csproj -c Release -o /app/publish --no-restore
 
 FROM base AS final
 WORKDIR /app
+
+# Run as non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
 COPY --from=build /app/publish .
 
 ENV ASPNETCORE_URLS=http://+:8080
