@@ -11,6 +11,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
       Firebase__ServiceAccountPath: /run/secrets/firebase-service-account.json
+      Firebase__ProjectId: sinter-prints-3
     volumes:
       - ./secrets/firebase/service-account.json:/run/secrets/firebase-service-account.json:ro
     networks:
