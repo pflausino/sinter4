@@ -4,13 +4,13 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: sinterprints
+      POSTGRES_DB: sinterdb
       POSTGRES_USER: sinterprints
       POSTGRES_PASSWORD: sinterprints_dev
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sinterprints -d sinterprints"]
+      test: ["CMD-SHELL", "pg_isready -U sinterprints -d sinterdb"]
       interval: 5s
       timeout: 5s
       retries: 5
