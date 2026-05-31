@@ -56,6 +56,9 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
         | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
 });
 
+// Serve static files early (before antiforgery/routing)
+app.UseStaticFiles();
+
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 
 app.UseAntiforgery();
@@ -63,6 +66,7 @@ app.UseAntiforgery();
 app.MapHealthChecks("/health");
 
 app.MapStaticAssets();
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
