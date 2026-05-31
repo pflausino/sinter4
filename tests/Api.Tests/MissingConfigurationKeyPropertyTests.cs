@@ -176,26 +176,33 @@ public class MissingConfigurationKeyPropertyTests : IDisposable
         if (FirebaseAdmin.FirebaseApp.DefaultInstance is not null)
             return;
 
-        using var rsa = RSA.Create(2048);
-        var privateKeyPem = rsa.ExportPkcs8PrivateKeyPem().ReplaceLineEndings("\\n");
-
-        var fakeServiceAccountJson = $$"""
+        try
         {
-            "type": "service_account",
-            "project_id": "test-project-id",
-            "private_key_id": "test-key-id",
-            "private_key": "{{privateKeyPem}}",
-            "client_email": "test@test-project-id.iam.gserviceaccount.com",
-            "client_id": "123456789",
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token"
+            using var rsa = RSA.Create(2048);
+            var privateKeyPem = rsa.ExportPkcs8PrivateKeyPem().ReplaceLineEndings("\\n");
+
+            var fakeServiceAccountJson = $$"""
+            {
+                "type": "service_account",
+                "project_id": "test-project-id",
+                "private_key_id": "test-key-id",
+                "private_key": "{{privateKeyPem}}",
+                "client_email": "test@test-project-id.iam.gserviceaccount.com",
+                "client_id": "123456789",
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token"
+            }
+            """;
+
+            FirebaseAdmin.FirebaseApp.Create(new FirebaseAdmin.AppOptions
+            {
+                Credential = Google.Apis.Auth.OAuth2.GoogleCredential.FromJson(fakeServiceAccountJson)
+            });
         }
-        """;
-
-        FirebaseAdmin.FirebaseApp.Create(new FirebaseAdmin.AppOptions
+        catch (ArgumentException)
         {
-            Credential = Google.Apis.Auth.OAuth2.GoogleCredential.FromJson(fakeServiceAccountJson)
-        });
+            // Already created by another thread/test — safe to ignore
+        }
     }
 
     private static void RemoveEfCore(IServiceCollection services)
