@@ -3,12 +3,13 @@ using System.Net.Http.Json;
 using Domain.Enums;
 using Microsoft.AspNetCore.Components;
 using Shared.Dtos;
+using Web.Services;
 
 namespace Web.Components.Pages;
 
 public partial class FileRecordCreate
 {
-    [Inject] private IHttpClientFactory HttpClientFactory { get; set; } = default!;
+    [Inject] private AuthenticatedHttpClient ApiClient { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
 
     private FileRecordCreateModel Model { get; set; } = new();
@@ -23,7 +24,7 @@ public partial class FileRecordCreate
 
         try
         {
-            var client = HttpClientFactory.CreateClient("Api");
+            var client = await ApiClient.CreateClientAsync();
 
             var request = new CreateFileRecordRequest(
                 Model.Name,

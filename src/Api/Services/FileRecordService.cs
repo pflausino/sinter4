@@ -36,7 +36,7 @@ public class FileRecordService : IFileRecordService
             Name = request.Name.Trim(),
             FileType = request.FileType,
             FlopDiskNumber = request.FlopDiskNumber,
-            Date = request.Date,
+            Date = DateTime.SpecifyKind(request.Date, DateTimeKind.Utc),
             Client = request.Client.Trim()
         };
 
@@ -54,7 +54,7 @@ public class FileRecordService : IFileRecordService
         entity.Name = request.Name.Trim();
         entity.FileType = request.FileType;
         entity.FlopDiskNumber = request.FlopDiskNumber;
-        entity.Date = request.Date;
+        entity.Date = DateTime.SpecifyKind(request.Date, DateTimeKind.Utc);
         entity.Client = request.Client.Trim();
 
         await _dbContext.SaveChangesAsync();

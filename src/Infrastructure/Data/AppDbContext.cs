@@ -28,6 +28,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.FlopDiskNumber);
             entity.Property(e => e.Date).HasColumnType("timestamptz");
             entity.Property(e => e.Client).IsRequired();
+            entity.Property(e => e.FileNumber);
         });
     }
 }

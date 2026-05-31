@@ -2,7 +2,9 @@ using System.Text.Json;
 using Api.Endpoints;
 using Api.Services;
 using Infrastructure;
+using Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -58,6 +60,14 @@ builder.Services.AddAuthorizationBuilder()
         policy.RequireAuthenticatedUser());
 
 var app = builder.Build();
+
+// Apply pending migrations only in production
+if (app.Environment.IsProduction())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();

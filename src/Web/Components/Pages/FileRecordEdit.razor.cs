@@ -3,12 +3,13 @@ using System.Net.Http.Json;
 using Domain.Enums;
 using Microsoft.AspNetCore.Components;
 using Shared.Dtos;
+using Web.Services;
 
 namespace Web.Components.Pages;
 
 public partial class FileRecordEdit
 {
-    [Inject] private IHttpClientFactory HttpClientFactory { get; set; } = default!;
+    [Inject] private AuthenticatedHttpClient ApiClient { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
 
     [Parameter] public Guid Id { get; set; }
@@ -23,7 +24,7 @@ public partial class FileRecordEdit
     {
         try
         {
-            var client = HttpClientFactory.CreateClient("Api");
+            var client = await ApiClient.CreateClientAsync();
             var response = await client.GetAsync($"/api/file-records/{Id}");
 
             if (response.IsSuccessStatusCode)
@@ -65,7 +66,7 @@ public partial class FileRecordEdit
 
         try
         {
-            var client = HttpClientFactory.CreateClient("Api");
+            var client = await ApiClient.CreateClientAsync();
 
             var request = new UpdateFileRecordRequest(
                 Model.Name,

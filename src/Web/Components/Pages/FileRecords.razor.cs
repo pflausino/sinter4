@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using Shared.Dtos;
+using Web.Services;
 
 namespace Web.Components.Pages;
 
 public partial class FileRecords
 {
-    [Inject] private IHttpClientFactory HttpClientFactory { get; set; } = default!;
+    [Inject] private AuthenticatedHttpClient ApiClient { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
     private List<FileRecordResponse>? Records { get; set; }
@@ -23,7 +24,7 @@ public partial class FileRecords
 
         try
         {
-            var client = HttpClientFactory.CreateClient("Api");
+            var client = await ApiClient.CreateClientAsync();
             Records = await client.GetFromJsonAsync<List<FileRecordResponse>>("/api/file-records");
         }
         catch
@@ -43,7 +44,7 @@ public partial class FileRecords
 
         try
         {
-            var client = HttpClientFactory.CreateClient("Api");
+            var client = await ApiClient.CreateClientAsync();
             var response = await client.DeleteAsync($"/api/file-records/{id}");
 
             if (response.IsSuccessStatusCode)

@@ -10,4 +10,5 @@ public class FileRecord
     public int? FlopDiskNumber { get; set; }
     public DateTime Date { get; set; }
     public string Client { get; set; } = string.Empty;
+    public string? FileNumber { get; set; }
 }

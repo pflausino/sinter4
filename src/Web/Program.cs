@@ -29,6 +29,7 @@ builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, BlazorAutho
 builder.Services.AddScoped<ITokenStorage, ProtectedTokenStorage>();
 builder.Services.AddScoped<ITokenProvider, FirebaseTokenProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider, FirebaseAuthStateProvider>();
+builder.Services.AddScoped<AuthenticatedHttpClient>();
 
 builder.Services.AddHttpClient("Api", client =>
 {
