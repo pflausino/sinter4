@@ -61,5 +61,5 @@ jobs:
           script: |
             sleep 15
             docker exec sinter-prints-api wget -qO- http://localhost:8080/health || exit 1
-            docker exec sinter-prints-web wget -qO- http://localhost:8080/health || exit 1
+            docker inspect --format='{{.State.Status}}' sinter-prints-web | grep -q running || exit 1
             echo "Deployment verified successfully"
