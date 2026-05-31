@@ -1,0 +1,16 @@
+**/.git
+**/.vs
+**/.vscode
+**/.kiro
+**/bin
+**/obj
+**/node_modules
+**/TestResults
+**/coverage
+**/*.user
+**/*.suo
+**/docker-compose.override.yml
+**/.DS_Store
+**/Thumbs.db
+**/tests
+**/docs
