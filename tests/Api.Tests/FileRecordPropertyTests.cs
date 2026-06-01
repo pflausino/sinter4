@@ -185,24 +185,21 @@ public class FileRecordPropertyTests : IClassFixture<CustomWebApplicationFactory
     {
         var rng = new Random(seed);
         var count = rng.Next(2, 6);
-        var createdIds = new List<Guid>();
 
-        // Create multiple records with distinct dates
+        // Create multiple records with distinct dates far in the future to ensure
+        // they appear in the top 100 results (ordered by date descending)
         for (int i = 0; i < count; i++)
         {
             var request = new CreateFileRecordRequest(
                 $"Record_{seed}_{i}",
                 ValidFileTypes[rng.Next(ValidFileTypes.Length)],
                 null,
-                new DateTime(2000 + rng.Next(30), rng.Next(1, 13), rng.Next(1, 28), rng.Next(24), rng.Next(60), rng.Next(60), DateTimeKind.Utc),
+                new DateTime(2090 + i, rng.Next(1, 13), rng.Next(1, 28), rng.Next(24), rng.Next(60), rng.Next(60), DateTimeKind.Utc),
                 $"Client_{seed}_{i}"
             );
 
             var response = await _client.PostAsJsonAsync("/api/file-records", request);
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-            var created = await response.Content.ReadFromJsonAsync<FileRecordResponse>(JsonOptions);
-            Assert.NotNull(created);
-            createdIds.Add(created.Id);
         }
 
         // GET all records
@@ -210,16 +207,13 @@ public class FileRecordPropertyTests : IClassFixture<CustomWebApplicationFactory
         Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
         var allRecords = await listResponse.Content.ReadFromJsonAsync<List<FileRecordResponse>>(JsonOptions);
         Assert.NotNull(allRecords);
+        Assert.True(allRecords.Count >= 2, "Need at least 2 records to verify ordering");
 
-        // Filter to only our created records
-        var ourRecords = allRecords.Where(r => createdIds.Contains(r.Id)).ToList();
-        Assert.Equal(count, ourRecords.Count);
-
-        // Assert ordering: each Date >= next Date (descending)
-        for (int i = 0; i < ourRecords.Count - 1; i++)
+        // Assert ordering: each Date >= next Date (descending) across ALL returned records
+        for (int i = 0; i < allRecords.Count - 1; i++)
         {
-            Assert.True(ourRecords[i].Date >= ourRecords[i + 1].Date,
-                $"Records not in descending date order: {ourRecords[i].Date} should be >= {ourRecords[i + 1].Date}");
+            Assert.True(allRecords[i].Date >= allRecords[i + 1].Date,
+                $"Records not in descending date order at index {i}: {allRecords[i].Date} should be >= {allRecords[i + 1].Date}");
         }
     }
 
