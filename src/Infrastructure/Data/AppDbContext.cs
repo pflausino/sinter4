@@ -26,7 +26,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Name).IsRequired();
             entity.Property(e => e.FileType).IsRequired();
             entity.Property(e => e.FlopDiskNumber);
-            entity.Property(e => e.Date).HasColumnType("timestamptz");
+            entity.Property(e => e.Date).HasColumnType("timestamptz").IsRequired(false);
             entity.Property(e => e.Client).IsRequired();
             entity.Property(e => e.FileNumber);
         });

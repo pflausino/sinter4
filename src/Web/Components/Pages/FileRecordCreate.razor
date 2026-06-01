@@ -51,6 +51,12 @@
                 <InputNumber id="flopDiskNumber" @bind-Value="Model.FlopDiskNumber" class="form-control" placeholder="Opcional" />
                 <ValidationMessage For="() => Model.FlopDiskNumber" />
             </div>
+
+            <div class="field">
+                <label for="fileNumber" class="field-label">Número do Arquivo</label>
+                <InputText id="fileNumber" @bind-Value="Model.FileNumber" class="form-control" placeholder="Ex: 1179" />
+                <ValidationMessage For="() => Model.FileNumber" />
+            </div>
         </div>
 
         @if (!string.IsNullOrEmpty(ErrorMessage))

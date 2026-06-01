@@ -31,7 +31,8 @@ public partial class FileRecordCreate
                 Model.FileType,
                 Model.FlopDiskNumber,
                 Model.Date,
-                Model.Client
+                Model.Client,
+                Model.FileNumber
             );
 
             var response = await client.PostAsJsonAsync("/api/file-records", request);
@@ -67,6 +68,8 @@ public partial class FileRecordCreate
         public FileType FileType { get; set; } = FileType.CorelDRAW;
 
         public int? FlopDiskNumber { get; set; }
+
+        public string? FileNumber { get; set; }
 
         [Required(ErrorMessage = "A data é obrigatória.")]
         public DateTime Date { get; set; } = DateTime.Today;

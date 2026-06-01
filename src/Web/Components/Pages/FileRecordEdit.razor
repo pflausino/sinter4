@@ -59,7 +59,7 @@ else
                 </div>
 
                 <div class="field">
-                    <label for="date" class="field-label">Data <span class="required" aria-hidden="true">*</span></label>
+                    <label for="date" class="field-label">Data</label>
                     <InputDate id="date" @bind-Value="Model.Date" class="form-control" />
                     <ValidationMessage For="() => Model.Date" />
                 </div>
@@ -68,6 +68,12 @@ else
                     <label for="flopDiskNumber" class="field-label">Número do Disquete</label>
                     <InputNumber id="flopDiskNumber" @bind-Value="Model.FlopDiskNumber" class="form-control" placeholder="Opcional" />
                     <ValidationMessage For="() => Model.FlopDiskNumber" />
+                </div>
+
+                <div class="field">
+                    <label for="fileNumber" class="field-label">Número do Arquivo</label>
+                    <InputText id="fileNumber" @bind-Value="Model.FileNumber" class="form-control" placeholder="Ex: 1179" />
+                    <ValidationMessage For="() => Model.FileNumber" />
                 </div>
             </div>
 

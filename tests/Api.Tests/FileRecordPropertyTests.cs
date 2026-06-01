@@ -21,8 +21,7 @@ public class FileRecordPropertyTests : IClassFixture<CustomWebApplicationFactory
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    private static readonly FileType[] ValidFileTypes =
-        [FileType.CorelDRAW, FileType.Photoshop, FileType.Illustrator, FileType.Inkscape, FileType.PDF, FileType.Other];
+    private static readonly FileType[] ValidFileTypes = Enum.GetValues<FileType>();
 
     public FileRecordPropertyTests(CustomWebApplicationFactory factory)
     {
@@ -152,7 +151,7 @@ public class FileRecordPropertyTests : IClassFixture<CustomWebApplicationFactory
             0 => new { Name = "", FileType = 0, FlopDiskNumber = (int?)null, Date = DateTime.UtcNow, Client = "ValidClient" },
             // Case 1: Empty/whitespace Client
             1 => new { Name = "ValidName", FileType = 0, FlopDiskNumber = (int?)null, Date = DateTime.UtcNow, Client = "" },
-            // Case 2: Invalid FileType (outside 0-5 range)
+            // Case 2: Invalid FileType (outside the enum range)
             _ => new { Name = "ValidName", FileType = 99, FlopDiskNumber = (int?)null, Date = DateTime.UtcNow, Client = "ValidClient" }
         };
 

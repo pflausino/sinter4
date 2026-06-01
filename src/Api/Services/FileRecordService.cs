@@ -17,7 +17,8 @@ public class FileRecordService : IFileRecordService
     public async Task<List<FileRecordResponse>> GetAllAsync()
     {
         return await _dbContext.FileRecords
-            .OrderByDescending(f => f.Date)
+            .OrderByDescending(f => f.Date ?? DateTime.MinValue)
+            .Take(100)
             .Select(f => ToResponse(f))
             .ToListAsync();
     }
@@ -37,7 +38,8 @@ public class FileRecordService : IFileRecordService
             FileType = request.FileType,
             FlopDiskNumber = request.FlopDiskNumber,
             Date = DateTime.SpecifyKind(request.Date, DateTimeKind.Utc),
-            Client = request.Client.Trim()
+            Client = request.Client.Trim(),
+            FileNumber = NormalizeOptional(request.FileNumber)
         };
 
         _dbContext.FileRecords.Add(entity);
@@ -54,8 +56,11 @@ public class FileRecordService : IFileRecordService
         entity.Name = request.Name.Trim();
         entity.FileType = request.FileType;
         entity.FlopDiskNumber = request.FlopDiskNumber;
-        entity.Date = DateTime.SpecifyKind(request.Date, DateTimeKind.Utc);
+        entity.Date = request.Date.HasValue
+            ? DateTime.SpecifyKind(request.Date.Value, DateTimeKind.Utc)
+            : null;
         entity.Client = request.Client.Trim();
+        entity.FileNumber = NormalizeOptional(request.FileNumber);
 
         await _dbContext.SaveChangesAsync();
 
@@ -74,5 +79,8 @@ public class FileRecordService : IFileRecordService
     }
 
     private static FileRecordResponse ToResponse(FileRecord entity) =>
-        new(entity.Id, entity.Name, entity.FileType, entity.FlopDiskNumber, entity.Date, entity.Client);
+        new(entity.Id, entity.Name, entity.FileType, entity.FlopDiskNumber, entity.Date, entity.Client, entity.FileNumber);
+
+    private static string? NormalizeOptional(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

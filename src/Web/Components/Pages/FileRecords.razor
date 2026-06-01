@@ -53,6 +53,7 @@ else
                 <tr>
                     <th scope="col">Nome</th>
                     <th scope="col">Tipo</th>
+                    <th scope="col">Nº Arquivo</th>
                     <th scope="col">Cliente</th>
                     <th scope="col">Data</th>
                     <th scope="col" class="col-disk">Nº Disquete</th>
@@ -65,15 +66,16 @@ else
                     <tr>
                         <td class="cell-name">@record.Name</td>
                         <td><span class="badge-type badge-@record.FileType.ToString().ToLowerInvariant()">@record.FileType</span></td>
+                        <td>@(record.FileNumber ?? "—")</td>
                         <td>@record.Client</td>
-                        <td class="cell-date">@record.Date.ToString("dd/MM/yyyy")</td>
+                        <td class="cell-date">@(record.Date?.ToString("dd/MM/yyyy") ?? "Sem data")</td>
                         <td class="col-disk">@(record.FlopDiskNumber?.ToString() ?? "—")</td>
                         <td class="col-actions">
                             <div class="action-group">
                                 <a href="@($"/file-records/{record.Id}/edit")" class="btn-action btn-edit" title="Editar" aria-label="Editar @record.Name">
                                     ✏️
                                 </a>
-                                <button class="btn-action btn-delete" @onclick="() => DeleteRecord(record.Id)" title="Excluir" aria-label="Excluir @record.Name">
+                                <button class="btn-action btn-delete" @onclick="() => RequestDelete(record.Id, record.Name)" title="Excluir" aria-label="Excluir @record.Name">
                                     🗑️
                                 </button>
                             </div>
@@ -98,9 +100,16 @@ else
                         <span class="detail-label">Cliente</span>
                         <span class="detail-value">@record.Client</span>
                     </div>
+                    @if (!string.IsNullOrWhiteSpace(record.FileNumber))
+                    {
+                        <div class="card-detail">
+                            <span class="detail-label">Arquivo</span>
+                            <span class="detail-value">@record.FileNumber</span>
+                        </div>
+                    }
                     <div class="card-detail">
                         <span class="detail-label">Data</span>
-                        <span class="detail-value">@record.Date.ToString("dd/MM/yyyy")</span>
+                        <span class="detail-value">@(record.Date?.ToString("dd/MM/yyyy") ?? "Sem data")</span>
                     </div>
                     @if (record.FlopDiskNumber.HasValue)
                     {
@@ -112,9 +121,40 @@ else
                 </div>
                 <div class="card-actions">
                     <a href="@($"/file-records/{record.Id}/edit")" class="btn btn-sm btn-outline-secondary" aria-label="Editar @record.Name">Editar</a>
-                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteRecord(record.Id)" aria-label="Excluir @record.Name">Excluir</button>
+                    <button class="btn btn-sm btn-outline-danger" @onclick="() => RequestDelete(record.Id, record.Name)" aria-label="Excluir @record.Name">Excluir</button>
                 </div>
             </div>
         }
+    </div>
+}
+
+@* Delete Confirmation Modal *@
+@if (ShowDeleteModal)
+{
+    <div class="modal-backdrop" @onclick="CancelDelete" aria-hidden="true"></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+        <div class="modal-content">
+            <div class="modal-icon" aria-hidden="true">🗑️</div>
+            <h2 id="deleteModalTitle" class="modal-title">Excluir ficha</h2>
+            <p class="modal-message">
+                Tem certeza que deseja excluir <strong>@DeleteTargetName</strong>? Esta ação não pode ser desfeita.
+            </p>
+            <div class="modal-actions">
+                <button class="btn btn-modal-cancel" @onclick="CancelDelete" disabled="@IsDeleting">
+                    Cancelar
+                </button>
+                <button class="btn btn-modal-delete" @onclick="ConfirmDelete" disabled="@IsDeleting">
+                    @if (IsDeleting)
+                    {
+                        <span class="spinner-sm" aria-hidden="true"></span>
+                        <span>Excluindo...</span>
+                    }
+                    else
+                    {
+                        <span>Excluir</span>
+                    }
+                </button>
+            </div>
+        </div>
     </div>
 }

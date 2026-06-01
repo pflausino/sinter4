@@ -37,6 +37,7 @@ public partial class FileRecordEdit
                     Model.FlopDiskNumber = record.FlopDiskNumber;
                     Model.Date = record.Date;
                     Model.Client = record.Client;
+                    Model.FileNumber = record.FileNumber;
                 }
                 else
                 {
@@ -73,7 +74,8 @@ public partial class FileRecordEdit
                 Model.FileType,
                 Model.FlopDiskNumber,
                 Model.Date,
-                Model.Client
+                Model.Client,
+                Model.FileNumber
             );
 
             var response = await client.PutAsJsonAsync($"/api/file-records/{Id}", request);
@@ -110,8 +112,9 @@ public partial class FileRecordEdit
 
         public int? FlopDiskNumber { get; set; }
 
-        [Required(ErrorMessage = "A data é obrigatória.")]
-        public DateTime Date { get; set; } = DateTime.Today;
+        public string? FileNumber { get; set; }
+
+        public DateTime? Date { get; set; }
 
         [Required(ErrorMessage = "O cliente é obrigatório.")]
         [MinLength(1, ErrorMessage = "O cliente não pode ser vazio.")]

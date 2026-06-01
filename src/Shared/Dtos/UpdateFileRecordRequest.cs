@@ -14,10 +14,11 @@ public record UpdateFileRecordRequest(
 
     int? FlopDiskNumber,
 
-    [Required(ErrorMessage = "A data é obrigatória.")]
-    DateTime Date,
+    DateTime? Date,
 
     [Required(ErrorMessage = "O cliente é obrigatório.")]
     [MinLength(1, ErrorMessage = "O cliente não pode ser vazio.")]
-    string Client
+    string Client,
+
+    string? FileNumber = null
 );

@@ -35,7 +35,7 @@ namespace Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("client");
 
-                    b.Property<DateTime>("Date")
+                    b.Property<DateTime?>("Date")
                         .HasColumnType("timestamptz")
                         .HasColumnName("date");
 

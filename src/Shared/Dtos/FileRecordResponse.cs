@@ -7,6 +7,7 @@ public record FileRecordResponse(
     string Name,
     FileType FileType,
     int? FlopDiskNumber,
-    DateTime Date,
-    string Client
+    DateTime? Date,
+    string Client,
+    string? FileNumber
 );
