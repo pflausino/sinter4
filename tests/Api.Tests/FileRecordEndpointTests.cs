@@ -152,7 +152,9 @@ public class FileRecordEndpointTests : IClassFixture<CustomWebApplicationFactory
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var records = await response.Content.ReadFromJsonAsync<List<FileRecordResponse>>(JsonOptions);
+        var paginated = await response.Content.ReadFromJsonAsync<PaginatedResponse<FileRecordResponse>>(JsonOptions);
+        Assert.NotNull(paginated);
+        var records = paginated.Items;
         Assert.NotNull(records);
         Assert.Contains(records, r => r.Name == $"GetAll-A-{suffix}");
         Assert.Contains(records, r => r.Name == $"GetAll-B-{suffix}");

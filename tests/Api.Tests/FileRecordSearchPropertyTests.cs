@@ -55,9 +55,9 @@ public class FileRecordSearchPropertyTests : IClassFixture<CustomWebApplicationF
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var results = await response.Content.ReadFromJsonAsync<List<FileRecordResponse>>(JsonOptions);
-        Assert.NotNull(results);
-        Assert.Empty(results);
+        var paginated = await response.Content.ReadFromJsonAsync<PaginatedResponse<FileRecordResponse>>(JsonOptions);
+        Assert.NotNull(paginated);
+        Assert.Empty(paginated.Items);
     }
 
     /// <summary>

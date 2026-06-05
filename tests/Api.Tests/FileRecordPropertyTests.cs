@@ -205,7 +205,9 @@ public class FileRecordPropertyTests : IClassFixture<CustomWebApplicationFactory
         // GET all records
         var listResponse = await _client.GetAsync("/api/file-records");
         Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
-        var allRecords = await listResponse.Content.ReadFromJsonAsync<List<FileRecordResponse>>(JsonOptions);
+        var paginated = await listResponse.Content.ReadFromJsonAsync<PaginatedResponse<FileRecordResponse>>(JsonOptions);
+        Assert.NotNull(paginated);
+        var allRecords = paginated.Items;
         Assert.NotNull(allRecords);
         Assert.True(allRecords.Count >= 2, "Need at least 2 records to verify ordering");
 

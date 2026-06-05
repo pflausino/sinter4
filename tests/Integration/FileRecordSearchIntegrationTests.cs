@@ -230,7 +230,9 @@ public class FileRecordSearchIntegrationTests : IClassFixture<PostgresWebApplica
         var response = await _client.GetAsync("/api/file-records/search?q=grafica");
 
         response.EnsureSuccessStatusCode();
-        var results = await response.Content.ReadFromJsonAsync<List<FileRecordResponse>>();
+        var paginated = await response.Content.ReadFromJsonAsync<PaginatedResponse<FileRecordResponse>>();
+        Assert.NotNull(paginated);
+        var results = paginated.Items;
 
         Assert.NotNull(results);
         Assert.Contains(results, r => r.Name.Contains("Gráfica"));
@@ -243,7 +245,9 @@ public class FileRecordSearchIntegrationTests : IClassFixture<PostgresWebApplica
         var response = await _client.GetAsync("/api/file-records/search?q=s%C3%A3o");
 
         response.EnsureSuccessStatusCode();
-        var results = await response.Content.ReadFromJsonAsync<List<FileRecordResponse>>();
+        var paginated = await response.Content.ReadFromJsonAsync<PaginatedResponse<FileRecordResponse>>();
+        Assert.NotNull(paginated);
+        var results = paginated.Items;
 
         Assert.NotNull(results);
         Assert.Contains(results, r => r.Name.Contains("São Paulo"));
@@ -256,7 +260,9 @@ public class FileRecordSearchIntegrationTests : IClassFixture<PostgresWebApplica
         var response = await _client.GetAsync("/api/file-records/search?q=BANNER");
 
         response.EnsureSuccessStatusCode();
-        var results = await response.Content.ReadFromJsonAsync<List<FileRecordResponse>>();
+        var paginated = await response.Content.ReadFromJsonAsync<PaginatedResponse<FileRecordResponse>>();
+        Assert.NotNull(paginated);
+        var results = paginated.Items;
 
         Assert.NotNull(results);
         Assert.Contains(results, r => r.Name.Contains("Banner"));
@@ -269,7 +275,9 @@ public class FileRecordSearchIntegrationTests : IClassFixture<PostgresWebApplica
         var response = await _client.GetAsync("/api/file-records/search?q=muller");
 
         response.EnsureSuccessStatusCode();
-        var results = await response.Content.ReadFromJsonAsync<List<FileRecordResponse>>();
+        var paginated = await response.Content.ReadFromJsonAsync<PaginatedResponse<FileRecordResponse>>();
+        Assert.NotNull(paginated);
+        var results = paginated.Items;
 
         Assert.NotNull(results);
         Assert.Contains(results, r => r.Client.Contains("Müller"));
@@ -282,7 +290,9 @@ public class FileRecordSearchIntegrationTests : IClassFixture<PostgresWebApplica
         var response = await _client.GetAsync("/api/file-records/search?q=paulo%20design");
 
         response.EnsureSuccessStatusCode();
-        var results = await response.Content.ReadFromJsonAsync<List<FileRecordResponse>>();
+        var paginated = await response.Content.ReadFromJsonAsync<PaginatedResponse<FileRecordResponse>>();
+        Assert.NotNull(paginated);
+        var results = paginated.Items;
 
         Assert.NotNull(results);
         Assert.Contains(results, r => r.Name == "São Paulo Design");
@@ -323,7 +333,9 @@ public class FileRecordSearchIntegrationTests : IClassFixture<PostgresWebApplica
         var response = await _client.GetAsync("/api/file-records/search?q=");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var results = await response.Content.ReadFromJsonAsync<List<FileRecordResponse>>();
+        var paginated = await response.Content.ReadFromJsonAsync<PaginatedResponse<FileRecordResponse>>();
+        Assert.NotNull(paginated);
+        var results = paginated.Items;
 
         Assert.NotNull(results);
         Assert.Empty(results);
@@ -335,7 +347,9 @@ public class FileRecordSearchIntegrationTests : IClassFixture<PostgresWebApplica
         var response = await _client.GetAsync("/api/file-records/search?q=%20%20%20");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var results = await response.Content.ReadFromJsonAsync<List<FileRecordResponse>>();
+        var paginated = await response.Content.ReadFromJsonAsync<PaginatedResponse<FileRecordResponse>>();
+        Assert.NotNull(paginated);
+        var results = paginated.Items;
 
         Assert.NotNull(results);
         Assert.Empty(results);
@@ -347,7 +361,9 @@ public class FileRecordSearchIntegrationTests : IClassFixture<PostgresWebApplica
         var response = await _client.GetAsync("/api/file-records/search");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var results = await response.Content.ReadFromJsonAsync<List<FileRecordResponse>>();
+        var paginated = await response.Content.ReadFromJsonAsync<PaginatedResponse<FileRecordResponse>>();
+        Assert.NotNull(paginated);
+        var results = paginated.Items;
 
         Assert.NotNull(results);
         Assert.Empty(results);

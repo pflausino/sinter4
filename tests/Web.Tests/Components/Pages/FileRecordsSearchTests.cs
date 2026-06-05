@@ -311,12 +311,14 @@ public class FileRecordsSearchTests : BunitContext
 
     private void SetupLoadRecordsResponse(List<FileRecordResponse> records)
     {
-        _httpHandler.SetResponse("/api/file-records", records);
+        var paginated = new PaginatedResponse<FileRecordResponse>(records, records.Count, false);
+        _httpHandler.SetResponsePattern("/api/file-records", paginated);
     }
 
     private void SetupSearchResponse(List<FileRecordResponse> results)
     {
-        _httpHandler.SetResponsePattern("/api/file-records/search", results);
+        var paginated = new PaginatedResponse<FileRecordResponse>(results, results.Count, false);
+        _httpHandler.SetResponsePattern("/api/file-records/search", paginated);
     }
 
     private static List<FileRecordResponse> GetSampleRecords() =>
@@ -388,8 +390,8 @@ internal class MockHttpMessageHandler : HttpMessageHandler
 
         var path = request.RequestUri?.PathAndQuery ?? string.Empty;
 
-        // Check pattern responses first (for search with query params)
-        foreach (var (prefix, response) in _patternResponses)
+        // Check pattern responses first (for search with query params) - longest prefix first
+        foreach (var (prefix, response) in _patternResponses.OrderByDescending(p => p.Key.Length))
         {
             if (path.StartsWith(prefix))
             {

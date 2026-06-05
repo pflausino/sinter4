@@ -22,7 +22,7 @@ public static class FileRecordEndpoints
         group.MapGet("/search", async (string? q, int? offset, int? limit, IFileRecordService service, ILogger<Program> logger) =>
         {
             if (string.IsNullOrWhiteSpace(q))
-                return Results.Ok(new { Items = Array.Empty<FileRecordResponse>(), TotalCount = 0, HasMore = false });
+                return Results.Ok(new PaginatedResponse<FileRecordResponse>([], 0, false));
 
             if (q.Length > 200)
                 return Results.BadRequest(new { error = "Search term must not exceed 200 characters" });
