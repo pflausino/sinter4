@@ -22,4 +22,8 @@
     <UserSecretsId>b65ee49c-afdb-4ce5-99cd-7bd8a50ad445</UserSecretsId>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Api.Tests" />
+  </ItemGroup>
+
 </Project>

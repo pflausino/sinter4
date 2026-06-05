@@ -9,4 +9,5 @@ public interface IFileRecordService
     Task<FileRecordResponse> CreateAsync(CreateFileRecordRequest request);
     Task<FileRecordResponse?> UpdateAsync(Guid id, UpdateFileRecordRequest request);
     Task<bool> DeleteAsync(Guid id);
+    Task<List<FileRecordResponse>> SearchAsync(string searchTerm);
 }

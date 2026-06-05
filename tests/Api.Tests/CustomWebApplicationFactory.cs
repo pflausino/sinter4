@@ -78,10 +78,17 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         // (it checks FirebaseApp.DefaultInstance is not null).
         if (FirebaseAdmin.FirebaseApp.DefaultInstance is null)
         {
-            FirebaseAdmin.FirebaseApp.Create(new FirebaseAdmin.AppOptions
+            try
             {
-                Credential = Google.Apis.Auth.OAuth2.GoogleCredential.FromJson(fakeServiceAccountJson)
-            });
+                FirebaseAdmin.FirebaseApp.Create(new FirebaseAdmin.AppOptions
+                {
+                    Credential = Google.Apis.Auth.OAuth2.GoogleCredential.FromJson(fakeServiceAccountJson)
+                });
+            }
+            catch (System.ArgumentException)
+            {
+                // FirebaseApp already exists (race condition between test assemblies) — safe to ignore
+            }
         }
     }
 

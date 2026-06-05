@@ -17,6 +17,26 @@ public static class FileRecordEndpoints
             return Results.Ok(records);
         });
 
+        group.MapGet("/search", async (string? q, IFileRecordService service, ILogger<Program> logger) =>
+        {
+            if (string.IsNullOrWhiteSpace(q))
+                return Results.Ok(Array.Empty<FileRecordResponse>());
+
+            if (q.Length > 200)
+                return Results.BadRequest(new { error = "Search term must not exceed 200 characters" });
+
+            try
+            {
+                var results = await service.SearchAsync(q);
+                return Results.Ok(results);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Database error while searching file records");
+                return Results.StatusCode(500);
+            }
+        });
+
         group.MapGet("/{id:guid}", async (Guid id, IFileRecordService service) =>
         {
             var record = await service.GetByIdAsync(id);

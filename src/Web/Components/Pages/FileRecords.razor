@@ -4,16 +4,53 @@
 
 <PageTitle>Fichas de Arquivo</PageTitle>
 
-<div class="page-header">
-    <div>
-        <h1>Fichas de Arquivo</h1>
-        <p class="page-subtitle">Gerencie seus registros de arte final</p>
+<div class="page-title-row">
+    <h1>Fichas de Arquivo</h1>
+    <p class="page-subtitle">Gerencie seus registros de arte final</p>
+</div>
+
+<div class="search-row">
+    <div class="search-group">
+        <input type="text"
+               maxlength="200"
+               placeholder="Buscar por nome do arquivo ou cliente..."
+               aria-label="Buscar fichas de arquivo"
+               class="search-input"
+               tabindex="0"
+               @bind="SearchTerm"
+               @bind:event="oninput"
+               @onkeydown="HandleSearchKeyDown" />
+        <button type="button"
+                class="btn btn-primary btn-search"
+                aria-label="Executar busca"
+                tabindex="0"
+                disabled="@IsSearching"
+                @onclick="ExecuteSearch">
+            @if (IsSearching)
+            {
+                <span class="spinner-sm" aria-hidden="true"></span>
+                <span>Buscando...</span>
+            }
+            else
+            {
+                <span class="btn-search-icon" aria-hidden="true">🔍</span>
+                <span>Buscar</span>
+            }
+        </button>
     </div>
-    <a href="/file-records/new" class="btn btn-primary btn-new" aria-label="Criar nova ficha de arquivo">
+    <a href="/file-records/new" class="btn btn-primary btn-new" aria-label="Criar nova ficha de arquivo" tabindex="0">
         <span class="btn-icon" aria-hidden="true">+</span>
         <span>Nova Ficha</span>
     </a>
 </div>
+
+@if (HasSearchError)
+{
+    <div class="search-error-alert" role="alert" aria-live="assertive">
+        <span class="alert-icon" aria-hidden="true">⚠️</span>
+        <span>Não foi possível completar a busca. Tente novamente.</span>
+    </div>
+}
 
 @if (IsLoading)
 {
@@ -31,6 +68,15 @@ else if (HasError)
         <button class="btn btn-outline-primary" @onclick="LoadRecords">Tentar novamente</button>
     </div>
 }
+else if (IsSearchActive && SearchResultCount == 0)
+{
+    <div class="empty-state" role="status" aria-live="polite">
+        <div class="state-icon" aria-hidden="true">🔍</div>
+        <p class="state-title">Nenhum resultado encontrado para '@SearchedTerm'</p>
+        <p class="state-description">Tente buscar com outros termos ou verifique a ortografia.</p>
+        <button class="btn btn-outline-primary" @onclick="ClearSearch">Limpar busca</button>
+    </div>
+}
 else if (Records is null || Records.Count == 0)
 {
     <div class="empty-state" role="status">
@@ -43,7 +89,17 @@ else if (Records is null || Records.Count == 0)
 else
 {
     <div class="records-summary">
-        <span>@Records.Count @(Records.Count == 1 ? "registro" : "registros")</span>
+        @if (IsSearchActive && SearchResultCount > 0)
+        {
+            <span>@SearchResultCount @(SearchResultCount == 1 ? "resultado" : "resultados") para '@SearchedTerm'</span>
+            <button class="btn-clear-search" @onclick="ClearSearch" aria-label="Limpar busca e mostrar todos os registros">
+                ✕ Limpar busca
+            </button>
+        }
+        else
+        {
+            <span>@Records.Count @(Records.Count == 1 ? "registro" : "registros")</span>
+        }
     </div>
 
     @* Desktop table view *@

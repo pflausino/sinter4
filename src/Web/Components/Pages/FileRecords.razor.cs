@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Shared.Dtos;
 using Web.Services;
 
@@ -11,6 +12,14 @@ public partial class FileRecords
     private List<FileRecordResponse>? Records { get; set; }
     private bool IsLoading { get; set; } = true;
     private bool HasError { get; set; }
+
+    // Search state
+    private string SearchTerm { get; set; } = string.Empty;
+    private bool IsSearching { get; set; }
+    private bool HasSearchError { get; set; }
+    private bool IsSearchActive { get; set; }
+    private int? SearchResultCount { get; set; }
+    private string? SearchedTerm { get; set; }
 
     // Delete confirmation modal state
     private bool ShowDeleteModal { get; set; }
@@ -41,6 +50,55 @@ public partial class FileRecords
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    private async Task ExecuteSearch()
+    {
+        if (string.IsNullOrWhiteSpace(SearchTerm))
+        {
+            await ClearSearch();
+            return;
+        }
+
+        IsSearching = true;
+        HasSearchError = false;
+
+        try
+        {
+            var client = await ApiClient.CreateClientAsync();
+            var encoded = Uri.EscapeDataString(SearchTerm.Trim());
+            Records = await client.GetFromJsonAsync<List<FileRecordResponse>>(
+                $"/api/file-records/search?q={encoded}");
+            SearchedTerm = SearchTerm.Trim();
+            SearchResultCount = Records?.Count ?? 0;
+            IsSearchActive = true;
+        }
+        catch
+        {
+            HasSearchError = true;
+        }
+        finally
+        {
+            IsSearching = false;
+        }
+    }
+
+    private async Task ClearSearch()
+    {
+        SearchTerm = string.Empty;
+        IsSearchActive = false;
+        SearchedTerm = null;
+        SearchResultCount = null;
+        HasSearchError = false;
+        await LoadRecords();
+    }
+
+    private async Task HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ExecuteSearch();
         }
     }
 
