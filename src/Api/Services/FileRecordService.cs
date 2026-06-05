@@ -5,6 +5,7 @@ using System.Text;
 using Domain.Entities;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Shared.Dtos;
 
 public class FileRecordService : IFileRecordService
@@ -101,24 +102,14 @@ public class FileRecordService : IFileRecordService
         if (terms.Length == 0)
             return [];
 
-        // Build raw SQL query using unaccent for accent-insensitive matching
         var sql = BuildSearchSql(terms);
         var parameters = BuildSearchParameters(terms);
 
-        var candidates = await _dbContext.FileRecords
+        var records = await _dbContext.FileRecords
             .FromSqlRaw(sql, parameters)
             .ToListAsync();
 
-        // Score in memory, filter, order by date descending, and return top 100
-        var scored = candidates
-            .Select(f => new { Record = f, Score = ComputeScore(f, terms) })
-            .Where(x => x.Score > 0)
-            .OrderByDescending(x => x.Record.Date ?? DateTime.MinValue)
-            .Take(100)
-            .Select(x => ToResponse(x.Record))
-            .ToList();
-
-        return scored;
+        return records.Select(ToResponse).ToList();
     }
 
     public async Task<PaginatedResponse<FileRecordResponse>> SearchPagedAsync(string searchTerm, int offset, int limit)
@@ -128,30 +119,48 @@ public class FileRecordService : IFileRecordService
         if (terms.Length == 0)
             return new PaginatedResponse<FileRecordResponse>([], 0, false);
 
-        var sql = BuildSearchSql(terms);
-        var parameters = BuildSearchParameters(terms);
+        var countSql = BuildSearchCountSql(terms);
+        var countParameters = BuildSearchParameters(terms);
+        var totalCount = await _dbContext.Database
+            .SqlQueryRaw<int>(countSql, countParameters)
+            .SingleAsync();
 
-        var candidates = await _dbContext.FileRecords
-            .FromSqlRaw(sql, parameters)
+        var pageSql = BuildSearchPagedSql(terms);
+        var pageParameters = BuildSearchParameters(terms)
+            .Concat([
+                new NpgsqlParameter("@offset", offset),
+                new NpgsqlParameter("@limit", limit)
+            ])
+            .ToArray();
+
+        var records = await _dbContext.FileRecords
+            .FromSqlRaw(pageSql, pageParameters)
             .ToListAsync();
 
-        var scored = candidates
-            .Select(f => new { Record = f, Score = ComputeScore(f, terms) })
-            .Where(x => x.Score > 0)
-            .OrderByDescending(x => x.Record.Date ?? DateTime.MinValue)
-            .ToList();
-
-        var totalCount = scored.Count;
-        var items = scored
-            .Skip(offset)
-            .Take(limit)
-            .Select(x => ToResponse(x.Record))
-            .ToList();
+        var items = records.Select(ToResponse).ToList();
 
         return new PaginatedResponse<FileRecordResponse>(items, totalCount, offset + items.Count < totalCount);
     }
 
     private static string BuildSearchSql(string[] terms)
+    {
+        var whereClause = BuildSearchWhereClause(terms);
+        return $"SELECT * FROM file_records WHERE {whereClause} ORDER BY date DESC NULLS LAST, id LIMIT 100";
+    }
+
+    private static string BuildSearchPagedSql(string[] terms)
+    {
+        var whereClause = BuildSearchWhereClause(terms);
+        return $"SELECT * FROM file_records WHERE {whereClause} ORDER BY date DESC NULLS LAST, id OFFSET @offset LIMIT @limit";
+    }
+
+    private static string BuildSearchCountSql(string[] terms)
+    {
+        var whereClause = BuildSearchWhereClause(terms);
+        return $"SELECT COUNT(*)::int AS \"Value\" FROM file_records WHERE {whereClause}";
+    }
+
+    private static string BuildSearchWhereClause(string[] terms)
     {
         var conditions = new StringBuilder();
         for (int i = 0; i < terms.Length; i++)
@@ -160,7 +169,7 @@ public class FileRecordService : IFileRecordService
             conditions.Append($"(unaccent(lower(name)) ILIKE unaccent(lower(@p{i})) OR unaccent(lower(client)) ILIKE unaccent(lower(@p{i})))");
         }
 
-        return $"SELECT * FROM file_records WHERE {conditions}";
+        return conditions.ToString();
     }
 
     private static object[] BuildSearchParameters(string[] terms)
@@ -168,7 +177,7 @@ public class FileRecordService : IFileRecordService
         var parameters = new object[terms.Length];
         for (int i = 0; i < terms.Length; i++)
         {
-            parameters[i] = new Npgsql.NpgsqlParameter($"@p{i}", $"%{terms[i]}%");
+            parameters[i] = new NpgsqlParameter($"@p{i}", $"%{terms[i]}%");
         }
         return parameters;
     }

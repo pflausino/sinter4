@@ -224,6 +224,43 @@ public class FileRecordSearchIntegrationTests : IClassFixture<PostgresWebApplica
     }
 
     [Fact]
+    public async Task Search_Pagination_ReturnsRequestedPageAndTotalCount()
+    {
+        var marker = $"Pagination{Guid.NewGuid():N}";
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            for (var i = 1; i <= 5; i++)
+            {
+                dbContext.FileRecords.Add(new FileRecord
+                {
+                    Id = Guid.NewGuid(),
+                    Name = $"{marker} Record {i}",
+                    FileType = FileType.CorelDRAW,
+                    Client = "Pagination Test",
+                    Date = DateTime.SpecifyKind(new DateTime(2024, 1, i), DateTimeKind.Utc)
+                });
+            }
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        var response = await _client.GetAsync($"/api/file-records/search?q={marker}&offset=2&limit=2");
+
+        response.EnsureSuccessStatusCode();
+        var paginated = await response.Content.ReadFromJsonAsync<PaginatedResponse<FileRecordResponse>>();
+
+        Assert.NotNull(paginated);
+        Assert.Equal(5, paginated.TotalCount);
+        Assert.True(paginated.HasMore);
+        Assert.Collection(
+            paginated.Items,
+            item => Assert.Equal($"{marker} Record 3", item.Name),
+            item => Assert.Equal($"{marker} Record 2", item.Name));
+    }
+
+    [Fact]
     public async Task Search_UnaccentExtensionWorks_FindsAccentedRecordsWithoutAccents()
     {
         // Search "grafica" should find "Gráfica Premium" (accent-insensitive via unaccent)
