@@ -98,7 +98,7 @@ else
         }
         else
         {
-            <span>@Records.Count @(Records.Count == 1 ? "registro" : "registros")</span>
+            <span>@TotalCount @(TotalCount == 1 ? "registro" : "registros")</span>
         }
     </div>
 
@@ -182,6 +182,17 @@ else
             </div>
         }
     </div>
+
+    @* Infinite scroll sentinel and loading indicator *@
+    @if (IsLoadingMore)
+    {
+        <div class="loading-more" role="status" aria-live="polite">
+            <div class="spinner-sm" aria-hidden="true"></div>
+            <span>Carregando mais registros...</span>
+        </div>
+    }
+
+    <div @ref="SentinelRef" class="scroll-sentinel" aria-hidden="true"></div>
 }
 
 @* Delete Confirmation Modal *@

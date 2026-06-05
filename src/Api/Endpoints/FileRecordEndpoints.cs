@@ -11,23 +11,27 @@ public static class FileRecordEndpoints
         var group = app.MapGroup("/api/file-records")
             .RequireAuthorization("Authenticated");
 
-        group.MapGet("/", async (IFileRecordService service) =>
+        group.MapGet("/", async (int? offset, int? limit, IFileRecordService service) =>
         {
-            var records = await service.GetAllAsync();
-            return Results.Ok(records);
+            var pageOffset = Math.Max(offset ?? 0, 0);
+            var pageLimit = Math.Clamp(limit ?? 50, 1, 100);
+            var result = await service.GetPagedAsync(pageOffset, pageLimit);
+            return Results.Ok(result);
         });
 
-        group.MapGet("/search", async (string? q, IFileRecordService service, ILogger<Program> logger) =>
+        group.MapGet("/search", async (string? q, int? offset, int? limit, IFileRecordService service, ILogger<Program> logger) =>
         {
             if (string.IsNullOrWhiteSpace(q))
-                return Results.Ok(Array.Empty<FileRecordResponse>());
+                return Results.Ok(new { Items = Array.Empty<FileRecordResponse>(), TotalCount = 0, HasMore = false });
 
             if (q.Length > 200)
                 return Results.BadRequest(new { error = "Search term must not exceed 200 characters" });
 
             try
             {
-                var results = await service.SearchAsync(q);
+                var pageOffset = Math.Max(offset ?? 0, 0);
+                var pageLimit = Math.Clamp(limit ?? 50, 1, 100);
+                var results = await service.SearchPagedAsync(q, pageOffset, pageLimit);
                 return Results.Ok(results);
             }
             catch (Exception ex)

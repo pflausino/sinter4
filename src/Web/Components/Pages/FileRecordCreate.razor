@@ -13,7 +13,7 @@
 </div>
 
 <div class="form-card">
-    <EditForm Model="Model" OnValidSubmit="HandleValidSubmit" FormName="CreateFileRecord">
+    <EditForm Model="Model" OnValidSubmit="HandleValidSubmit" FormName="CreateFileRecord" id="create-form">
         <DataAnnotationsValidator />
 
         <div class="form-grid">
@@ -53,11 +53,27 @@
             </div>
 
             <div class="field">
-                <label for="fileNumber" class="field-label">Número do Arquivo</label>
-                <InputText id="fileNumber" @bind-Value="Model.FileNumber" class="form-control" placeholder="Ex: 1179" />
+                <label for="fileNumber" class="field-label">Número do Arquivo <span class="required" aria-hidden="true">*</span></label>
+                <div class="field-with-lock">
+                    <InputText id="fileNumber" @bind-Value="Model.FileNumber" class="form-control" placeholder="Ex: 1179" />
+                    <button type="button"
+                            class="btn-lock @(LockFileNumber ? "locked" : "")"
+                            title="@(LockFileNumber ? "Desbloquear: limpar após salvar" : "Bloquear: manter valor após salvar")"
+                            aria-label="@(LockFileNumber ? "Desbloquear número do arquivo" : "Bloquear número do arquivo")"
+                            @onclick="ToggleLockFileNumber">
+                        @(LockFileNumber ? "🔒" : "🔓")
+                    </button>
+                </div>
                 <ValidationMessage For="() => Model.FileNumber" />
             </div>
         </div>
+
+        @if (SuccessMessage is not null)
+        {
+            <div class="alert-success" role="status" aria-live="polite">
+                <span aria-hidden="true">✅</span> @SuccessMessage
+            </div>
+        }
 
         @if (!string.IsNullOrEmpty(ErrorMessage))
         {

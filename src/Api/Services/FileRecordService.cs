@@ -25,6 +25,20 @@ public class FileRecordService : IFileRecordService
             .ToListAsync();
     }
 
+    public async Task<PaginatedResponse<FileRecordResponse>> GetPagedAsync(int offset, int limit)
+    {
+        var totalCount = await _dbContext.FileRecords.CountAsync();
+
+        var items = await _dbContext.FileRecords
+            .OrderByDescending(f => f.Date ?? DateTime.MinValue)
+            .Skip(offset)
+            .Take(limit)
+            .Select(f => ToResponse(f))
+            .ToListAsync();
+
+        return new PaginatedResponse<FileRecordResponse>(items, totalCount, offset + items.Count < totalCount);
+    }
+
     public async Task<FileRecordResponse?> GetByIdAsync(Guid id)
     {
         var entity = await _dbContext.FileRecords.FindAsync(id);
@@ -105,6 +119,36 @@ public class FileRecordService : IFileRecordService
             .ToList();
 
         return scored;
+    }
+
+    public async Task<PaginatedResponse<FileRecordResponse>> SearchPagedAsync(string searchTerm, int offset, int limit)
+    {
+        var terms = searchTerm.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        if (terms.Length == 0)
+            return new PaginatedResponse<FileRecordResponse>([], 0, false);
+
+        var sql = BuildSearchSql(terms);
+        var parameters = BuildSearchParameters(terms);
+
+        var candidates = await _dbContext.FileRecords
+            .FromSqlRaw(sql, parameters)
+            .ToListAsync();
+
+        var scored = candidates
+            .Select(f => new { Record = f, Score = ComputeScore(f, terms) })
+            .Where(x => x.Score > 0)
+            .OrderByDescending(x => x.Record.Date ?? DateTime.MinValue)
+            .ToList();
+
+        var totalCount = scored.Count;
+        var items = scored
+            .Skip(offset)
+            .Take(limit)
+            .Select(x => ToResponse(x.Record))
+            .ToList();
+
+        return new PaginatedResponse<FileRecordResponse>(items, totalCount, offset + items.Count < totalCount);
     }
 
     private static string BuildSearchSql(string[] terms)

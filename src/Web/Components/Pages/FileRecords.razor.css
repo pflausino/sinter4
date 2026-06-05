@@ -600,3 +600,19 @@
         transform: translateY(0) scale(1);
     }
 }
+
+/* Infinite Scroll */
+.loading-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1.5rem 1rem;
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.scroll-sentinel {
+    height: 1px;
+    width: 100%;
+}

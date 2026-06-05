@@ -80,6 +80,19 @@
     font-size: 0.875rem;
 }
 
+.alert-success {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-top: 1.25rem;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 6px;
+    color: #166534;
+    font-size: 0.875rem;
+}
+
 /* Form Actions */
 .form-actions {
     display: flex;
@@ -131,4 +144,50 @@
     .form-actions .btn {
         text-align: center;
     }
+}
+
+/* Field with lock button */
+.field-with-lock {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.field-with-lock .form-control {
+    flex: 1;
+}
+
+.btn-lock {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    padding: 0;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    background: #f8f9fa;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.15s, border-color 0.15s, transform 0.1s;
+    flex-shrink: 0;
+}
+
+.btn-lock:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.btn-lock.locked {
+    background: #fff3cd;
+    border-color: #ffc107;
+}
+
+.btn-lock:focus-visible {
+    outline: 2px solid #258cfb;
+    outline-offset: 2px;
+}
+
+.btn-lock:active {
+    transform: scale(0.92);
 }

@@ -2,6 +2,8 @@ using System.ComponentModel.DataAnnotations;
 using System.Net.Http.Json;
 using Domain.Enums;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using Shared.Dtos;
 using Web.Services;
 
@@ -9,17 +11,31 @@ namespace Web.Components.Pages;
 
 public partial class FileRecordCreate
 {
+    private static readonly string[] FieldIds = ["name", "fileType", "client", "date", "fileNumber"];
+
     [Inject] private AuthenticatedHttpClient ApiClient { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
 
     private FileRecordCreateModel Model { get; set; } = new();
     private bool IsSubmitting { get; set; }
     private string? ErrorMessage { get; set; }
+    private string? SuccessMessage { get; set; }
+    private bool LockFileNumber { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("FormNavigation.initialize", "#create-form", FieldIds);
+        }
+    }
 
     private async Task HandleValidSubmit()
     {
         IsSubmitting = true;
         ErrorMessage = null;
+        SuccessMessage = null;
         StateHasChanged();
 
         try
@@ -39,7 +55,12 @@ public partial class FileRecordCreate
 
             if (response.IsSuccessStatusCode)
             {
-                Navigation.NavigateTo("/file-records");
+                SuccessMessage = $"Ficha '{Model.Name}' criada com sucesso!";
+                ResetForm();
+                StateHasChanged();
+                await Task.Yield();
+                await JS.InvokeVoidAsync("FormNavigation.initialize", "#create-form", FieldIds);
+                await JS.InvokeVoidAsync("FormNavigation.focusField", "name");
             }
             else
             {
@@ -57,6 +78,21 @@ public partial class FileRecordCreate
         }
     }
 
+    private void ResetForm()
+    {
+        var preservedFileNumber = LockFileNumber ? Model.FileNumber : null;
+        Model = new FileRecordCreateModel();
+        if (preservedFileNumber is not null)
+        {
+            Model.FileNumber = preservedFileNumber;
+        }
+    }
+
+    private void ToggleLockFileNumber()
+    {
+        LockFileNumber = !LockFileNumber;
+    }
+
     public sealed class FileRecordCreateModel
     {
         [Required(ErrorMessage = "O nome é obrigatório.")]
@@ -69,7 +105,8 @@ public partial class FileRecordCreate
 
         public int? FlopDiskNumber { get; set; }
 
-        public string? FileNumber { get; set; }
+        [Required(ErrorMessage = "O número do arquivo é obrigatório.")]
+        public string FileNumber { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "A data é obrigatória.")]
         public DateTime Date { get; set; } = DateTime.Today;

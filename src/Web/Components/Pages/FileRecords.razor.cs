@@ -1,17 +1,29 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using Shared.Dtos;
 using Web.Services;
 
 namespace Web.Components.Pages;
 
-public partial class FileRecords
+public partial class FileRecords : IAsyncDisposable
 {
-    [Inject] private AuthenticatedHttpClient ApiClient { get; set; } = default!;
+    private const int PageSize = 50;
 
-    private List<FileRecordResponse>? Records { get; set; }
+    [Inject] private AuthenticatedHttpClient ApiClient { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private List<FileRecordResponse> Records { get; set; } = [];
     private bool IsLoading { get; set; } = true;
     private bool HasError { get; set; }
+
+    // Pagination state
+    private int TotalCount { get; set; }
+    private bool HasMore { get; set; }
+    private bool IsLoadingMore { get; set; }
+    private ElementReference SentinelRef { get; set; }
+    private DotNetObjectReference<FileRecords>? _dotNetRef;
+    private bool _observerInitialized;
 
     // Search state
     private string SearchTerm { get; set; } = string.Empty;
@@ -32,24 +44,105 @@ public partial class FileRecords
         await LoadRecords();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_observerInitialized && !IsLoading && !HasError && Records.Count > 0 && HasMore)
+        {
+            await InitializeInfiniteScroll();
+        }
+    }
+
+    private async Task InitializeInfiniteScroll()
+    {
+        try
+        {
+            _dotNetRef ??= DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("InfiniteScroll.initialize", SentinelRef, _dotNetRef);
+            _observerInitialized = true;
+        }
+        catch (JSException)
+        {
+            // Element may not be in DOM yet
+        }
+    }
+
     private async Task LoadRecords()
     {
         IsLoading = true;
         HasError = false;
+        Records = [];
+        _observerInitialized = false;
 
         try
         {
             var client = await ApiClient.CreateClientAsync();
-            Records = await client.GetFromJsonAsync<List<FileRecordResponse>>("/api/file-records");
+            var response = await client.GetFromJsonAsync<PaginatedResponse<FileRecordResponse>>(
+                $"/api/file-records?offset=0&limit={PageSize}");
+
+            if (response is not null)
+            {
+                Records = response.Items;
+                TotalCount = response.TotalCount;
+                HasMore = response.HasMore;
+            }
         }
         catch
         {
-            Records = null;
+            Records = [];
             HasError = true;
         }
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    [JSInvokable]
+    public async Task LoadMoreItems()
+    {
+        if (IsLoadingMore || !HasMore) return;
+
+        IsLoadingMore = true;
+        StateHasChanged();
+
+        try
+        {
+            var client = await ApiClient.CreateClientAsync();
+
+            if (IsSearchActive && !string.IsNullOrWhiteSpace(SearchedTerm))
+            {
+                var encoded = Uri.EscapeDataString(SearchedTerm);
+                var response = await client.GetFromJsonAsync<PaginatedResponse<FileRecordResponse>>(
+                    $"/api/file-records/search?q={encoded}&offset={Records.Count}&limit={PageSize}");
+
+                if (response is not null)
+                {
+                    Records.AddRange(response.Items);
+                    HasMore = response.HasMore;
+                    SearchResultCount = response.TotalCount;
+                }
+            }
+            else
+            {
+                var response = await client.GetFromJsonAsync<PaginatedResponse<FileRecordResponse>>(
+                    $"/api/file-records?offset={Records.Count}&limit={PageSize}");
+
+                if (response is not null)
+                {
+                    Records.AddRange(response.Items);
+                    TotalCount = response.TotalCount;
+                    HasMore = response.HasMore;
+                }
+            }
+        }
+        catch
+        {
+            // Silently handle — user can scroll again to retry
+        }
+        finally
+        {
+            IsLoadingMore = false;
+            StateHasChanged();
         }
     }
 
@@ -63,15 +156,29 @@ public partial class FileRecords
 
         IsSearching = true;
         HasSearchError = false;
+        _observerInitialized = false;
 
         try
         {
             var client = await ApiClient.CreateClientAsync();
             var encoded = Uri.EscapeDataString(SearchTerm.Trim());
-            Records = await client.GetFromJsonAsync<List<FileRecordResponse>>(
-                $"/api/file-records/search?q={encoded}");
+            var response = await client.GetFromJsonAsync<PaginatedResponse<FileRecordResponse>>(
+                $"/api/file-records/search?q={encoded}&offset=0&limit={PageSize}");
+
+            if (response is not null)
+            {
+                Records = response.Items;
+                SearchResultCount = response.TotalCount;
+                HasMore = response.HasMore;
+            }
+            else
+            {
+                Records = [];
+                SearchResultCount = 0;
+                HasMore = false;
+            }
+
             SearchedTerm = SearchTerm.Trim();
-            SearchResultCount = Records?.Count ?? 0;
             IsSearchActive = true;
         }
         catch
@@ -129,7 +236,9 @@ public partial class FileRecords
 
             if (response.IsSuccessStatusCode)
             {
-                Records = Records?.Where(r => r.Id != DeleteTargetId).ToList();
+                Records = Records.Where(r => r.Id != DeleteTargetId).ToList();
+                TotalCount--;
+                if (IsSearchActive) SearchResultCount--;
             }
         }
         catch
@@ -143,5 +252,19 @@ public partial class FileRecords
             DeleteTargetId = null;
             DeleteTargetName = null;
         }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("InfiniteScroll.dispose");
+        }
+        catch (JSDisconnectedException)
+        {
+            // Circuit already disconnected
+        }
+
+        _dotNetRef?.Dispose();
     }
 }
