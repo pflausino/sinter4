@@ -74,6 +74,26 @@ public class FileRecordEndpointTests : IClassFixture<CustomWebApplicationFactory
     }
 
     [Fact]
+    public async Task Create_WhitespaceName_Returns400()
+    {
+        var request = ValidCreateRequest() with { Name = "   " };
+
+        var response = await _client.PostAsJsonAsync("/api/file-records", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Create_WhitespaceClient_Returns400()
+    {
+        var request = ValidCreateRequest() with { Client = "\t  " };
+
+        var response = await _client.PostAsJsonAsync("/api/file-records", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Create_MissingDate_Returns400()
     {
         // Arrange — send JSON with date explicitly null
@@ -249,6 +269,40 @@ public class FileRecordEndpointTests : IClassFixture<CustomWebApplicationFactory
         var response = await _client.PutAsync($"/api/file-records/{created.Id}", content);
 
         // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Update_WhitespaceName_Returns400()
+    {
+        var created = await CreateRecordAsync();
+        var request = new UpdateFileRecordRequest(
+            Name: "   ",
+            FileType: FileType.PDF,
+            FlopDiskNumber: null,
+            Date: new DateTime(2024, 5, 1, 0, 0, 0, DateTimeKind.Utc),
+            Client: "Client"
+        );
+
+        var response = await _client.PutAsJsonAsync($"/api/file-records/{created.Id}", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Update_WhitespaceClient_Returns400()
+    {
+        var created = await CreateRecordAsync();
+        var request = new UpdateFileRecordRequest(
+            Name: "Name",
+            FileType: FileType.PDF,
+            FlopDiskNumber: null,
+            Date: new DateTime(2024, 5, 1, 0, 0, 0, DateTimeKind.Utc),
+            Client: "\r\n"
+        );
+
+        var response = await _client.PutAsJsonAsync($"/api/file-records/{created.Id}", request);
+
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 

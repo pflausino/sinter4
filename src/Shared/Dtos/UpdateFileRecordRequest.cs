@@ -2,10 +2,12 @@ namespace Shared.Dtos;
 
 using System.ComponentModel.DataAnnotations;
 using Domain.Enums;
+using Shared.Validation;
 
 public record UpdateFileRecordRequest(
     [Required(ErrorMessage = "O nome é obrigatório.")]
     [MinLength(1, ErrorMessage = "O nome não pode ser vazio.")]
+    [NotWhiteSpace(ErrorMessage = "O nome não pode ser vazio.")]
     string Name,
 
     [Required(ErrorMessage = "O tipo de arquivo é obrigatório.")]
@@ -18,6 +20,7 @@ public record UpdateFileRecordRequest(
 
     [Required(ErrorMessage = "O cliente é obrigatório.")]
     [MinLength(1, ErrorMessage = "O cliente não pode ser vazio.")]
+    [NotWhiteSpace(ErrorMessage = "O cliente não pode ser vazio.")]
     string Client,
 
     string? FileNumber = null
