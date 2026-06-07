@@ -100,6 +100,89 @@
     line-height: 1;
 }
 
+/* Column Selector */
+.column-selector {
+    position: relative;
+}
+
+.btn-campos {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    background: #fff;
+    color: #495057;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-campos:hover {
+    background: #f8f9fa;
+    border-color: #adb5bd;
+    color: #212529;
+}
+
+.btn-campos:focus-visible {
+    outline: 2px solid #258cfb;
+    outline-offset: 2px;
+}
+
+.btn-campos.active {
+    background: #e9ecef;
+    border-color: #adb5bd;
+    color: #212529;
+}
+
+.column-selector-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 200px;
+    margin-top: 0.25rem;
+    padding: 0.5rem 0;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+}
+
+.column-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: #212529;
+    transition: background-color 0.15s ease;
+}
+
+.column-option:hover {
+    background: #f8f9fa;
+}
+
+.column-option.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.column-option.disabled:hover {
+    background: transparent;
+}
+
+.column-option input[type="checkbox"] {
+    accent-color: #258cfb;
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+}
+
 /* Loading State */
 .loading-state {
     display: flex;
@@ -468,6 +551,21 @@
         margin-left: 0;
         align-self: stretch;
         justify-content: center;
+    }
+
+    .column-selector {
+        width: 100%;
+    }
+
+    .btn-campos {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .column-selector-dropdown {
+        right: 0;
+        max-height: 60vh;
+        overflow-y: auto;
     }
 }
 

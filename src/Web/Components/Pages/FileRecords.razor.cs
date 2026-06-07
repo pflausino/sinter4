@@ -6,6 +6,8 @@ using Web.Services;
 
 namespace Web.Components.Pages;
 
+public record ColumnDefinition(string Id, string Label, bool DefaultVisible);
+
 public partial class FileRecords : IAsyncDisposable
 {
     private const int PageSize = 50;
@@ -33,6 +35,81 @@ public partial class FileRecords : IAsyncDisposable
     private int? SearchResultCount { get; set; }
     private string? SearchedTerm { get; set; }
 
+    // Column visibility state
+    private static readonly ColumnDefinition[] AllColumns =
+    [
+        new("name", "Nome", DefaultVisible: true),
+        new("type", "Tipo", DefaultVisible: true),
+        new("fileNumber", "Nº Arquivo", DefaultVisible: true),
+        new("client", "Cliente", DefaultVisible: true),
+        new("date", "Data", DefaultVisible: true),
+        new("flopDiskNumber", "Nº Disquete", DefaultVisible: false),
+        new("actions", "Ações", DefaultVisible: true),
+    ];
+
+    private Dictionary<string, bool> ColumnVisibility { get; set; } = new();
+    private bool IsColumnSelectorOpen { get; set; }
+    private ElementReference ColumnSelectorRef { get; set; }
+    private DotNetObjectReference<FileRecords>? _columnSelectorDotNetRef;
+
+    // Column visibility methods
+
+    private void InitializeColumnVisibility()
+    {
+        ColumnVisibility = AllColumns.ToDictionary(c => c.Id, c => c.DefaultVisible);
+    }
+
+    private void ToggleColumnVisibility(string columnId)
+    {
+        if (!ColumnVisibility.ContainsKey(columnId)) return;
+
+        // If trying to hide and it's the last visible column, do nothing
+        if (ColumnVisibility[columnId] && VisibleColumnCount() <= 1) return;
+
+        ColumnVisibility[columnId] = !ColumnVisibility[columnId];
+    }
+
+    private int VisibleColumnCount() => ColumnVisibility.Count(kv => kv.Value);
+
+    private bool IsColumnVisible(string columnId) =>
+        ColumnVisibility.TryGetValue(columnId, out var visible) && visible;
+
+    private bool IsColumnDisabled(string columnId) =>
+        ColumnVisibility.TryGetValue(columnId, out var visible) && visible && VisibleColumnCount() <= 1;
+
+    // Column selector dropdown methods
+
+    private async Task ToggleColumnSelector()
+    {
+        IsColumnSelectorOpen = !IsColumnSelectorOpen;
+
+        if (IsColumnSelectorOpen)
+        {
+            _columnSelectorDotNetRef ??= DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("ColumnSelector.open", ColumnSelectorRef, _columnSelectorDotNetRef);
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("ColumnSelector.close");
+        }
+    }
+
+    [JSInvokable]
+    public void CloseColumnSelector()
+    {
+        IsColumnSelectorOpen = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleColumnSelectorKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && IsColumnSelectorOpen)
+        {
+            IsColumnSelectorOpen = false;
+            await JS.InvokeVoidAsync("ColumnSelector.close");
+        }
+    }
+
     // Delete confirmation modal state
     private bool ShowDeleteModal { get; set; }
     private bool IsDeleting { get; set; }
@@ -41,6 +118,7 @@ public partial class FileRecords : IAsyncDisposable
 
     protected override async Task OnInitializedAsync()
     {
+        InitializeColumnVisibility();
         await LoadRecords();
     }
 
@@ -259,6 +337,7 @@ public partial class FileRecords : IAsyncDisposable
         try
         {
             await JS.InvokeVoidAsync("InfiniteScroll.dispose");
+            await JS.InvokeVoidAsync("ColumnSelector.close");
         }
         catch (JSDisconnectedException)
         {
@@ -266,5 +345,6 @@ public partial class FileRecords : IAsyncDisposable
         }
 
         _dotNetRef?.Dispose();
+        _columnSelectorDotNetRef?.Dispose();
     }
 }

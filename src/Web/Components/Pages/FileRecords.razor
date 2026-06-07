@@ -38,6 +38,35 @@
             }
         </button>
     </div>
+    <div class="column-selector" @ref="ColumnSelectorRef" @onkeydown="HandleColumnSelectorKeyDown">
+        <button type="button"
+                class="btn btn-outline-secondary btn-campos @(IsColumnSelectorOpen ? "active" : "")"
+                aria-haspopup="listbox"
+                aria-expanded="@IsColumnSelectorOpen.ToString().ToLowerInvariant()"
+                aria-controls="column-selector-list"
+                @onclick="ToggleColumnSelector">
+            Campos
+        </button>
+
+        @if (IsColumnSelectorOpen)
+        {
+            <div class="column-selector-dropdown" id="column-selector-list" role="listbox" aria-label="Selecionar colunas visíveis">
+                @foreach (var col in AllColumns)
+                {
+                    var isDisabled = IsColumnDisabled(col.Id);
+                    <label class="column-option @(isDisabled ? "disabled" : "")"
+                           role="option"
+                           aria-selected="@ColumnVisibility[col.Id].ToString().ToLowerInvariant()">
+                        <input type="checkbox"
+                               checked="@ColumnVisibility[col.Id]"
+                               disabled="@isDisabled"
+                               @onchange="() => ToggleColumnVisibility(col.Id)" />
+                        @col.Label
+                    </label>
+                }
+            </div>
+        }
+    </div>
     <a href="/file-records/new" class="btn btn-primary btn-new" aria-label="Criar nova ficha de arquivo" tabindex="0">
         <span class="btn-icon" aria-hidden="true">+</span>
         <span>Nova Ficha</span>
@@ -107,35 +136,38 @@ else
         <table class="records-table" aria-label="Lista de fichas de arquivo">
             <thead>
                 <tr>
-                    <th scope="col">Nome</th>
-                    <th scope="col">Tipo</th>
-                    <th scope="col">Nº Arquivo</th>
-                    <th scope="col">Cliente</th>
-                    <th scope="col">Data</th>
-                    <th scope="col" class="col-disk">Nº Disquete</th>
-                    <th scope="col" class="col-actions">Ações</th>
+                    @if (IsColumnVisible("name")) { <th scope="col">Nome</th> }
+                    @if (IsColumnVisible("type")) { <th scope="col">Tipo</th> }
+                    @if (IsColumnVisible("fileNumber")) { <th scope="col">Nº Arquivo</th> }
+                    @if (IsColumnVisible("client")) { <th scope="col">Cliente</th> }
+                    @if (IsColumnVisible("date")) { <th scope="col">Data</th> }
+                    @if (IsColumnVisible("flopDiskNumber")) { <th scope="col" class="col-disk">Nº Disquete</th> }
+                    @if (IsColumnVisible("actions")) { <th scope="col" class="col-actions">Ações</th> }
                 </tr>
             </thead>
             <tbody>
                 @foreach (var record in Records)
                 {
                     <tr>
-                        <td class="cell-name">@record.Name</td>
-                        <td><span class="badge-type badge-@record.FileType.ToString().ToLowerInvariant()">@record.FileType</span></td>
-                        <td>@(record.FileNumber ?? "—")</td>
-                        <td>@record.Client</td>
-                        <td class="cell-date">@(record.Date?.ToString("dd/MM/yyyy") ?? "Sem data")</td>
-                        <td class="col-disk">@(record.FlopDiskNumber?.ToString() ?? "—")</td>
-                        <td class="col-actions">
-                            <div class="action-group">
-                                <a href="@($"/file-records/{record.Id}/edit")" class="btn-action btn-edit" title="Editar" aria-label="Editar @record.Name">
-                                    ✏️
-                                </a>
-                                <button class="btn-action btn-delete" @onclick="() => RequestDelete(record.Id, record.Name)" title="Excluir" aria-label="Excluir @record.Name">
-                                    🗑️
-                                </button>
-                            </div>
-                        </td>
+                        @if (IsColumnVisible("name")) { <td class="cell-name">@record.Name</td> }
+                        @if (IsColumnVisible("type")) { <td><span class="badge-type badge-@record.FileType.ToString().ToLowerInvariant()">@record.FileType</span></td> }
+                        @if (IsColumnVisible("fileNumber")) { <td>@(record.FileNumber ?? "—")</td> }
+                        @if (IsColumnVisible("client")) { <td>@record.Client</td> }
+                        @if (IsColumnVisible("date")) { <td class="cell-date">@(record.Date?.ToString("dd/MM/yyyy") ?? "Sem data")</td> }
+                        @if (IsColumnVisible("flopDiskNumber")) { <td class="col-disk">@(record.FlopDiskNumber?.ToString() ?? "—")</td> }
+                        @if (IsColumnVisible("actions"))
+                        {
+                            <td class="col-actions">
+                                <div class="action-group">
+                                    <a href="@($"/file-records/{record.Id}/edit")" class="btn-action btn-edit" title="Editar" aria-label="Editar @record.Name">
+                                        ✏️
+                                    </a>
+                                    <button class="btn-action btn-delete" @onclick="() => RequestDelete(record.Id, record.Name)" title="Excluir" aria-label="Excluir @record.Name">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </td>
+                        }
                     </tr>
                 }
             </tbody>
@@ -148,26 +180,38 @@ else
         {
             <div class="record-card">
                 <div class="card-header">
-                    <span class="card-name">@record.Name</span>
-                    <span class="badge-type badge-@record.FileType.ToString().ToLowerInvariant()">@record.FileType</span>
+                    @if (IsColumnVisible("name"))
+                    {
+                        <span class="card-name">@record.Name</span>
+                    }
+                    @if (IsColumnVisible("type"))
+                    {
+                        <span class="badge-type badge-@record.FileType.ToString().ToLowerInvariant()">@record.FileType</span>
+                    }
                 </div>
                 <div class="card-details">
-                    <div class="card-detail">
-                        <span class="detail-label">Cliente</span>
-                        <span class="detail-value">@record.Client</span>
-                    </div>
-                    @if (!string.IsNullOrWhiteSpace(record.FileNumber))
+                    @if (IsColumnVisible("client"))
+                    {
+                        <div class="card-detail">
+                            <span class="detail-label">Cliente</span>
+                            <span class="detail-value">@record.Client</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(record.FileNumber) && IsColumnVisible("fileNumber"))
                     {
                         <div class="card-detail">
                             <span class="detail-label">Arquivo</span>
                             <span class="detail-value">@record.FileNumber</span>
                         </div>
                     }
-                    <div class="card-detail">
-                        <span class="detail-label">Data</span>
-                        <span class="detail-value">@(record.Date?.ToString("dd/MM/yyyy") ?? "Sem data")</span>
-                    </div>
-                    @if (record.FlopDiskNumber.HasValue)
+                    @if (IsColumnVisible("date"))
+                    {
+                        <div class="card-detail">
+                            <span class="detail-label">Data</span>
+                            <span class="detail-value">@(record.Date?.ToString("dd/MM/yyyy") ?? "Sem data")</span>
+                        </div>
+                    }
+                    @if (record.FlopDiskNumber.HasValue && IsColumnVisible("flopDiskNumber"))
                     {
                         <div class="card-detail">
                             <span class="detail-label">Disquete</span>
@@ -175,10 +219,13 @@ else
                         </div>
                     }
                 </div>
-                <div class="card-actions">
-                    <a href="@($"/file-records/{record.Id}/edit")" class="btn btn-sm btn-outline-secondary" aria-label="Editar @record.Name">Editar</a>
-                    <button class="btn btn-sm btn-outline-danger" @onclick="() => RequestDelete(record.Id, record.Name)" aria-label="Excluir @record.Name">Excluir</button>
-                </div>
+                @if (IsColumnVisible("actions"))
+                {
+                    <div class="card-actions">
+                        <a href="@($"/file-records/{record.Id}/edit")" class="btn btn-sm btn-outline-secondary" aria-label="Editar @record.Name">Editar</a>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => RequestDelete(record.Id, record.Name)" aria-label="Excluir @record.Name">Excluir</button>
+                    </div>
+                }
             </div>
         }
     </div>
