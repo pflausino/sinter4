@@ -57,7 +57,8 @@ public class FileRecordsColumnVisibilityTests : BunitContext
 
         // Assert
         var camposButton = cut.Find(".btn-campos");
-        Assert.Contains("Campos", camposButton.TextContent);
+        Assert.NotNull(camposButton);
+        Assert.Equal("Selecionar colunas visíveis", camposButton.GetAttribute("aria-label"));
     }
 
     [Fact]
