@@ -19,7 +19,7 @@ When instructions conflict, follow this `AGENTS.md` first, then use the steering
 
 ## Project Structure & Module Organization
 
-This is a .NET 10 mono-repo. Application code lives under `src/`: `src/Api` for ASP.NET Core endpoints, `src/Web` for the Blazor UI, `src/Infrastructure` for EF Core data access and external services, `src/Domain` for core types, and `src/Shared` for DTOs/contracts. Tests live under `tests/`: `Api.Tests`, `Web.Tests`, and `Integration`. Frontend static assets are in `src/Web/wwwroot`; deployment and setup notes live in `deploy/` and `docs/`.
+This is a .NET 10 mono-repo. Application code lives under `src/`: `src/Api` for ASP.NET Core Minimal API endpoints, `src/Web` for the Blazor Server UI, `src/Infrastructure` for EF Core data access, Firebase integration, and migrations, `src/Domain` for core entities and enums, and `src/Shared` for DTOs, contracts, and validation attributes. Tests live under `tests/`: `Api.Tests`, `Web.Tests`, and `Integration`. Frontend static assets are in `src/Web/wwwroot`; deployment and setup notes live in `deploy/` and `docs/`.
 
 ## Build, Test, and Development Commands
 
@@ -42,11 +42,16 @@ Direct `dotnet` commands are also valid, for example `dotnet test tests/Web.Test
 
 ## Coding Style & Naming Conventions
 
-Use idiomatic modern C# with nullable reference types enabled. Use 4-space indentation for C# and Razor code. Prefer PascalCase for types, methods, components, and public members; camelCase for locals and parameters; and `Async` suffixes for asynchronous methods. Keep Blazor components small; move non-trivial logic into `.razor.cs` code-behind files. Use DI registrations instead of manual service construction. Database table and column names should follow PostgreSQL-style `snake_case`.
+Use idiomatic modern C# with nullable reference types enabled. Use 4-space indentation for C# and Razor code. Prefer PascalCase for types, methods, components, and public members; camelCase for locals and parameters; and `Async` suffixes for asynchronous methods. Keep Blazor components small; move non-trivial logic into `.razor.cs` code-behind files. Use DI registrations instead of manual service construction. Database table and column names follow PostgreSQL-style `snake_case` (via EFCore.NamingConventions). The API uses Minimal APIs exclusively (no Controllers).
 
 ## Testing Guidelines
 
 Tests use xUnit, FsCheck, bUnit, NSubstitute, `WebApplicationFactory<T>`, and Testcontainers PostgreSQL. Name test classes with `Tests` or `PropertyTests`, and use descriptive test names such as `MethodUnderTest_Scenario_ExpectedResult` when adding new coverage. Follow Arrange/Act/Assert. Add focused tests for auth, token handling, EF behavior, components, and any changed business logic. Run `make test` before opening a PR; use `dotnet test --collect:"XPlat Code Coverage"` when coverage data is needed.
+
+Test project responsibilities:
+- `tests/Api.Tests` — API endpoint and service tests (xUnit, FsCheck, WebApplicationFactory, EF InMemory)
+- `tests/Web.Tests` — Blazor component tests (bUnit, NSubstitute, FsCheck)
+- `tests/Integration` — Full-stack integration tests with real PostgreSQL (Testcontainers)
 
 ## Commit & Pull Request Guidelines
 

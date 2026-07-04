@@ -6,17 +6,34 @@
 
 Permitir que o usuário cadastre, categorize e localize rapidamente arquivos de arte final, eliminando a necessidade de busca manual em pastas e HDs.
 
-## Funcionalidades Principais
+## Funcionalidades Implementadas
 
-- Cadastro de arquivos de arte final com metadados (cliente, tipo de trabalho, software de origem, data, tags)
+- Cadastro de arquivos de arte final com metadados (nome, cliente, tipo de arquivo/software, número do disquete, data, número do arquivo)
+- Listagem paginada com busca por texto (nome, cliente)
+- Busca com suporte a unaccent (ignora acentos)
+- CRUD completo (criar, editar, excluir registros)
+- Autenticação via Firebase (login/logout, proteção de rotas e endpoints)
+
+## Modelo de Dados Atual (FileRecord)
+
+- `Id` (uuid) — Identificador único
+- `Name` (string) — Nome do arquivo/trabalho
+- `FileType` (enum) — Tipo/software: CorelDRAW, Photoshop, Illustrator, Inkscape, PDF, InDesign, PageMaker, JPEG, PNG, TIFF, EPS, LegacyOld, Unknown, Other
+- `FlopDiskNumber` (int?) — Número do disquete/mídia de armazenamento
+- `Date` (DateTime?) — Data do trabalho
+- `Client` (string) — Nome do cliente
+- `FileNumber` (string?) — Número do arquivo
+
+## Funcionalidades Futuras (Planejadas)
+
 - Catálogo visual com preview/thumbnail dos arquivos
-- Busca avançada por múltiplos critérios (cliente, tag, tipo de arquivo, período, etc.)
-- Organização por categorias e tags personalizáveis
+- Tags personalizáveis para organização adicional
 - Controle de versões dos arquivos
+- Busca avançada por período (data inicial/final)
 
 ## Stack
 
-- .NET 10 + Blazor (frontend e backend)
+- .NET 10 + Blazor Server (frontend e backend)
 - PostgreSQL (persistência)
 - Firebase Authentication (identidade e autenticação)
 - Mono-repo

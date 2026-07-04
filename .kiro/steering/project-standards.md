@@ -7,7 +7,7 @@ inclusion: always
 ## Stack Tecnológica
 
 - **.NET 10** — Framework principal (backend e frontend)
-- **Blazor** — Frontend (Server ou WebAssembly conforme contexto)
+- **Blazor Server** — Frontend
 - **PostgreSQL** — Banco de dados relacional
 - **Firebase Authentication** — Autenticação e gerenciamento de identidade
 - **xUnit** — Framework de testes automatizados
@@ -19,20 +19,19 @@ inclusion: always
 - Preferir convenção sobre configuração
 - Manter a árvore de pastas rasa e previsível
 
-### Estrutura de Pastas Sugerida
+### Estrutura de Pastas
 
 ```
 /src
-  /Api            → Web API e endpoints
-  /Web            → Projeto Blazor (frontend)
+  /Api            → Web API (Minimal APIs) e endpoints
+  /Web            → Projeto Blazor Server (frontend)
   /Domain         → Entidades, enums, value objects
-  /Infrastructure → Acesso a dados (EF Core), serviços externos
-  /Shared         → DTOs, contratos, extensões compartilhadas
+  /Infrastructure → Acesso a dados (EF Core), Firebase, migrations
+  /Shared         → DTOs, contratos, atributos de validação
 /tests
-  /Api.Tests      → Testes da API
-  /Web.Tests      → Testes do frontend
-  /Domain.Tests   → Testes de domínio
-  /Integration    → Testes de integração
+  /Api.Tests      → Testes da API (xUnit, FsCheck, WebApplicationFactory)
+  /Web.Tests      → Testes de componentes Blazor (bUnit, NSubstitute)
+  /Integration    → Testes de integração (Testcontainers PostgreSQL)
 ```
 
 ## Banco de Dados — PostgreSQL
@@ -79,27 +78,37 @@ inclusion: always
 - Todo código de negócio deve ter cobertura de testes
 - Nomenclatura: `MetodoSobTeste_Cenario_ResultadoEsperado`
 - Usar **Arrange / Act / Assert** (AAA pattern)
-- Mocks com **NSubstitute** ou **Moq**
+- Mocks com **NSubstitute**
+- **FsCheck** para testes baseados em propriedades (property-based testing)
+- **bUnit** para testes de componentes Blazor
 - Testes de integração com `WebApplicationFactory<T>` e banco em container (Testcontainers)
 - Testes devem ser independentes — sem dependência de ordem ou estado compartilhado
-- Rodar testes com `dotnet test` na raiz do repositório
+- Rodar testes com `make test` ou `dotnet test` na raiz do repositório
 
 ## Comandos Úteis
 
+O projeto usa um `Makefile` para workflows de desenvolvimento:
+
 ```bash
-# Restaurar dependências
+make restore          # Restaurar dependências NuGet
+make build            # Build da solution inteira
+make test             # Rodar todos os testes
+make db               # Subir PostgreSQL via Docker Compose
+make api              # Rodar a API (sobe o banco antes)
+make web              # Rodar o Blazor frontend
+make dev              # Build + API + Web em paralelo
+make migrate          # Aplicar migrations do EF Core
+make migration name=X # Criar nova migration
+make clean            # Limpar artefatos de build
+```
+
+Comandos `dotnet` diretos também funcionam:
+
+```bash
 dotnet restore
-
-# Build
 dotnet build
-
-# Rodar testes
 dotnet test
-
-# Rodar migrations
-dotnet ef database update --project src/Infrastructure
-
-# Rodar o projeto
+dotnet ef database update --project src/Infrastructure --startup-project src/Api
 dotnet run --project src/Api
 dotnet run --project src/Web
 ```
@@ -109,7 +118,7 @@ dotnet run --project src/Web
 - Sempre gerar código em C# idiomático e moderno (.NET 10)
 - Respeitar a estrutura mono-repo existente
 - Não criar camadas ou abstrações que não foram pedidas
-- Ao criar endpoints, usar Minimal APIs ou Controllers conforme o padrão já existente no projeto
+- Ao criar endpoints, usar Minimal APIs (padrão do projeto)
 - Ao criar componentes Blazor, seguir o padrão dos componentes existentes
 - Sempre incluir tratamento de erros adequado
 - Código gerado deve compilar sem warnings
