@@ -11,15 +11,15 @@ public static class FileRecordEndpoints
         var group = app.MapGroup("/api/file-records")
             .RequireAuthorization("Authenticated");
 
-        group.MapGet("/", async (int? offset, int? limit, IFileRecordService service) =>
+        group.MapGet("/", async (int? offset, int? limit, string? sortBy, string? sortDir, IFileRecordService service) =>
         {
             var pageOffset = Math.Max(offset ?? 0, 0);
             var pageLimit = Math.Clamp(limit ?? 50, 1, 100);
-            var result = await service.GetPagedAsync(pageOffset, pageLimit);
+            var result = await service.GetPagedAsync(pageOffset, pageLimit, sortBy, sortDir);
             return Results.Ok(result);
         });
 
-        group.MapGet("/search", async (string? q, int? offset, int? limit, IFileRecordService service, ILogger<Program> logger) =>
+        group.MapGet("/search", async (string? q, int? offset, int? limit, string? sortBy, string? sortDir, IFileRecordService service, ILogger<Program> logger) =>
         {
             if (string.IsNullOrWhiteSpace(q))
                 return Results.Ok(new PaginatedResponse<FileRecordResponse>([], 0, false));
@@ -31,7 +31,7 @@ public static class FileRecordEndpoints
             {
                 var pageOffset = Math.Max(offset ?? 0, 0);
                 var pageLimit = Math.Clamp(limit ?? 50, 1, 100);
-                var results = await service.SearchPagedAsync(q, pageOffset, pageLimit);
+                var results = await service.SearchPagedAsync(q, pageOffset, pageLimit, sortBy, sortDir);
                 return Results.Ok(results);
             }
             catch (Exception ex)
