@@ -12,6 +12,16 @@ public class FileRecordService : IFileRecordService
 {
     private readonly AppDbContext _dbContext;
 
+    internal static readonly HashSet<string> ValidSortFields = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "name",
+        "file_type",
+        "file_number",
+        "client",
+        "date",
+        "flop_disk_number"
+    };
+
     public FileRecordService(AppDbContext dbContext)
     {
         _dbContext = dbContext;
@@ -26,12 +36,14 @@ public class FileRecordService : IFileRecordService
             .ToListAsync();
     }
 
-    public async Task<PaginatedResponse<FileRecordResponse>> GetPagedAsync(int offset, int limit)
+    public async Task<PaginatedResponse<FileRecordResponse>> GetPagedAsync(
+        int offset, int limit, string? sortBy = null, string? sortDir = null)
     {
         var totalCount = await _dbContext.FileRecords.CountAsync();
 
-        var items = await _dbContext.FileRecords
-            .OrderByDescending(f => f.Date ?? DateTime.MinValue)
+        var query = ApplySort(_dbContext.FileRecords.AsQueryable(), sortBy, sortDir);
+
+        var items = await query
             .Skip(offset)
             .Take(limit)
             .Select(f => ToResponse(f))
@@ -112,7 +124,8 @@ public class FileRecordService : IFileRecordService
         return records.Select(ToResponse).ToList();
     }
 
-    public async Task<PaginatedResponse<FileRecordResponse>> SearchPagedAsync(string searchTerm, int offset, int limit)
+    public async Task<PaginatedResponse<FileRecordResponse>> SearchPagedAsync(
+        string searchTerm, int offset, int limit, string? sortBy = null, string? sortDir = null)
     {
         var terms = searchTerm.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
@@ -125,7 +138,7 @@ public class FileRecordService : IFileRecordService
             .SqlQueryRaw<int>(countSql, countParameters)
             .SingleAsync();
 
-        var pageSql = BuildSearchPagedSql(terms);
+        var pageSql = BuildSearchPagedSql(terms, sortBy, sortDir);
         var pageParameters = BuildSearchParameters(terms)
             .Concat([
                 new NpgsqlParameter("@offset", offset),
@@ -142,16 +155,105 @@ public class FileRecordService : IFileRecordService
         return new PaginatedResponse<FileRecordResponse>(items, totalCount, offset + items.Count < totalCount);
     }
 
+    /// <summary>
+    /// Applies dynamic ordering to a FileRecord query based on sortBy and sortDir parameters.
+    /// Falls back to <c>date DESC</c> when sortBy is null/invalid. Nulls appear LAST for ASC,
+    /// FIRST for DESC. Always appends <c>ThenBy(Id)</c> as tiebreaker for stable pagination.
+    /// </summary>
+    internal static IOrderedQueryable<FileRecord> ApplySort(
+        IQueryable<FileRecord> query, string? sortBy, string? sortDir)
+    {
+        var (field, descending) = ResolveSort(sortBy, sortDir);
+
+        IOrderedQueryable<FileRecord> ordered = (field, descending) switch
+        {
+            ("name", false) => query.OrderBy(f => f.Name),
+            ("name", true) => query.OrderByDescending(f => f.Name),
+
+            ("file_type", false) => query.OrderBy(f => f.FileType),
+            ("file_type", true) => query.OrderByDescending(f => f.FileType),
+
+            ("file_number", false) => query.OrderBy(f => f.FileNumber == null).ThenBy(f => f.FileNumber),
+            ("file_number", true) => query.OrderByDescending(f => f.FileNumber == null).ThenByDescending(f => f.FileNumber),
+
+            ("client", false) => query.OrderBy(f => f.Client),
+            ("client", true) => query.OrderByDescending(f => f.Client),
+
+            ("date", false) => query.OrderBy(f => f.Date == null).ThenBy(f => f.Date),
+            ("date", true) => query.OrderByDescending(f => f.Date == null).ThenByDescending(f => f.Date),
+
+            ("flop_disk_number", false) => query.OrderBy(f => f.FlopDiskNumber == null).ThenBy(f => f.FlopDiskNumber),
+            ("flop_disk_number", true) => query.OrderByDescending(f => f.FlopDiskNumber == null).ThenByDescending(f => f.FlopDiskNumber),
+
+            // Safety net — falls back to date DESC NULLS FIRST
+            _ => query.OrderByDescending(f => f.Date == null).ThenByDescending(f => f.Date)
+        };
+
+        return ordered.ThenBy(f => f.Id);
+    }
+
+    /// <summary>
+    /// Builds the ORDER BY clause used inside the raw SQL search query.
+    /// Only allows whitelisted field names to prevent SQL injection.
+    /// </summary>
+    internal static string BuildOrderByClause(string? sortBy, string? sortDir)
+    {
+        var (field, descending) = ResolveSort(sortBy, sortDir);
+
+        var direction = descending ? "DESC" : "ASC";
+        var nulls = descending ? "NULLS FIRST" : "NULLS LAST";
+
+        return $"{field} {direction} {nulls}, id";
+    }
+
+    /// <summary>
+    /// Resolves the effective sort field and direction from user input.
+    /// Invalid or missing sortBy forces the Default_Sort (date DESC), ignoring any sortDir
+    /// (Requirement 3.2). For a valid field, sortDir defaults to ASC unless the field is
+    /// <c>date</c>, which defaults to DESC (preserves legacy behavior).
+    /// </summary>
+    private static (string Field, bool Descending) ResolveSort(string? sortBy, string? sortDir)
+    {
+        var isValidField = !string.IsNullOrWhiteSpace(sortBy) && ValidSortFields.Contains(sortBy);
+
+        if (!isValidField)
+        {
+            // Invalid/missing sortBy → force Default_Sort (date DESC), ignore sortDir
+            return ("date", true);
+        }
+
+        var field = sortBy!.ToLowerInvariant();
+        var descending = ResolveDirection(field, sortDir);
+        return (field, descending);
+    }
+
+    /// <summary>
+    /// Resolves the effective sort direction for a valid field.
+    /// When sortDir is null/invalid, defaults to ASC except for <c>date</c> which defaults to DESC.
+    /// </summary>
+    private static bool ResolveDirection(string field, string? sortDir)
+    {
+        if (string.Equals(sortDir, "desc", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (string.Equals(sortDir, "asc", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        // Null/invalid sortDir → date defaults to DESC, others to ASC
+        return field == "date";
+    }
+
     private static string BuildSearchSql(string[] terms)
     {
         var whereClause = BuildSearchWhereClause(terms);
         return $"SELECT * FROM file_records WHERE {whereClause} ORDER BY date DESC NULLS LAST, id LIMIT 100";
     }
 
-    private static string BuildSearchPagedSql(string[] terms)
+    private static string BuildSearchPagedSql(string[] terms, string? sortBy, string? sortDir)
     {
         var whereClause = BuildSearchWhereClause(terms);
-        return $"SELECT * FROM file_records WHERE {whereClause} ORDER BY date DESC NULLS LAST, id OFFSET @offset LIMIT @limit";
+        var orderBy = BuildOrderByClause(sortBy, sortDir);
+        return $"SELECT * FROM file_records WHERE {whereClause} ORDER BY {orderBy} OFFSET @offset LIMIT @limit";
     }
 
     private static string BuildSearchCountSql(string[] terms)

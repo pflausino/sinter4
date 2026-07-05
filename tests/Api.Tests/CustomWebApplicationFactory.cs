@@ -48,6 +48,12 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
 
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
+    // Unique per factory instance so test classes don't cross-pollute the shared
+    // EF InMemory store (which is keyed by name process-wide). A fixed name let
+    // far-future-dated records from one class push another class's rows off the
+    // first result page, making list assertions order-dependent and flaky.
+    private readonly string _databaseName = $"TestDb_{Guid.NewGuid():N}";
+
     private static readonly string FakeServiceAccountPath;
 
     public static string GetFakeServiceAccountPath() => FakeServiceAccountPath;
@@ -114,7 +120,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
             // Register AppDbContext with InMemory provider
             services.AddDbContext<AppDbContext>(options =>
-                options.UseInMemoryDatabase("TestDb"));
+                options.UseInMemoryDatabase(_databaseName));
         });
 
         builder.ConfigureTestServices(services =>
