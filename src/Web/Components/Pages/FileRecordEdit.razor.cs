@@ -112,8 +112,8 @@ public partial class FileRecordEdit
 
         public int? FlopDiskNumber { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "O número do arquivo deve ser um inteiro não-negativo.")]
-        public int FileNumber { get; set; }
+        [Range(0, 99_999_999_999, ErrorMessage = "O número do arquivo deve ser um inteiro entre 0 e 99999999999.")]
+        public long FileNumber { get; set; }
 
         [Required(ErrorMessage = "A data é obrigatória.")]
         public DateTime Date { get; set; } = DateTime.Today;
