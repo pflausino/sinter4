@@ -80,11 +80,11 @@ public partial class FileRecordCreate
 
     private void ResetForm()
     {
-        var preservedFileNumber = LockFileNumber ? Model.FileNumber : null;
+        var preservedFileNumber = LockFileNumber ? Model.FileNumber : (int?)null;
         Model = new FileRecordCreateModel();
         if (preservedFileNumber is not null)
         {
-            Model.FileNumber = preservedFileNumber;
+            Model.FileNumber = preservedFileNumber.Value;
         }
     }
 
@@ -106,7 +106,8 @@ public partial class FileRecordCreate
         public int? FlopDiskNumber { get; set; }
 
         [Required(ErrorMessage = "O número do arquivo é obrigatório.")]
-        public string FileNumber { get; set; } = string.Empty;
+        [Range(0, int.MaxValue, ErrorMessage = "O número do arquivo deve ser um inteiro não-negativo.")]
+        public int FileNumber { get; set; }
 
         [Required(ErrorMessage = "A data é obrigatória.")]
         public DateTime Date { get; set; } = DateTime.Today;

@@ -319,6 +319,46 @@
     white-space: nowrap;
 }
 
+/* Sortable column headers */
+.records-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.records-table th.sortable:hover {
+    background: #eef1f4;
+    color: #1a1a2e;
+}
+
+.records-table th.sortable:focus-visible {
+    outline: 2px solid #4a90e2;
+    outline-offset: -2px;
+}
+
+.records-table th.sortable.sorted {
+    color: #1a1a2e;
+    background: #eef1f4;
+}
+
+.records-table th .th-label {
+    margin-right: 0.4rem;
+}
+
+.records-table th .sort-indicator {
+    display: inline-block;
+    font-size: 0.75rem;
+    color: #adb5bd;
+    min-width: 0.9em;
+    text-align: center;
+    line-height: 1;
+    transition: color 0.15s ease;
+}
+
+.records-table th.sortable.sorted .sort-indicator {
+    color: #4a90e2;
+}
+
 .records-table td {
     padding: 0.75rem 1rem;
     border-bottom: 1px solid #f0f0f0;
@@ -452,6 +492,68 @@
     background: #ffebee;
 }
 
+/* Mobile sort control — visible only on mobile (see @media below) */
+.mobile-sort-control {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+}
+
+.mobile-sort-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #495057;
+    white-space: nowrap;
+    margin: 0;
+}
+
+.mobile-sort-select {
+    flex: 1;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    background: #fff;
+    color: #1a1a2e;
+    font-size: 0.9rem;
+    min-width: 0;
+}
+
+.mobile-sort-select:focus-visible {
+    outline: 2px solid #4a90e2;
+    outline-offset: 1px;
+}
+
+.btn-sort-dir {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 1px solid #dee2e6;
+    background: #fff;
+    color: #4a90e2;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.btn-sort-dir:hover {
+    background: #eef1f4;
+}
+
+.btn-sort-dir:focus-visible {
+    outline: 2px solid #4a90e2;
+    outline-offset: 1px;
+}
+
 /* Mobile Cards */
 .cards-container {
     display: none;
@@ -522,6 +624,10 @@
     }
 
     .cards-container {
+        display: flex;
+    }
+
+    .mobile-sort-control {
         display: flex;
     }
 

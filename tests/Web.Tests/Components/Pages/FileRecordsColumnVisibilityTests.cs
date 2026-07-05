@@ -277,8 +277,8 @@ public class FileRecordsColumnVisibilityTests : BunitContext
 
     private static List<FileRecordResponse> GetSampleRecords() =>
     [
-        new(Guid.NewGuid(), "Cartão Visita João", FileType.CorelDRAW, 1, new DateTime(2024, 1, 15), "João Silva", "A001"),
-        new(Guid.NewGuid(), "Banner Loja", FileType.Photoshop, 2, new DateTime(2024, 2, 20), "Maria Loja", "B002"),
-        new(Guid.NewGuid(), "Folder Evento", FileType.Illustrator, null, new DateTime(2024, 3, 10), "Carlos Eventos", "C003")
+        new(Guid.NewGuid(), "Cartão Visita João", FileType.CorelDRAW, 1, new DateTime(2024, 1, 15), "João Silva", 1001),
+        new(Guid.NewGuid(), "Banner Loja", FileType.Photoshop, 2, new DateTime(2024, 2, 20), "Maria Loja", 2002),
+        new(Guid.NewGuid(), "Folder Evento", FileType.Illustrator, null, new DateTime(2024, 3, 10), "Carlos Eventos", 3003)
     ];
 }

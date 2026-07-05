@@ -66,39 +66,39 @@ public class FileRecordSortIntegrationTests : IClassFixture<PostgresWebApplicati
     // -------- Sort by date (nullable) --------
 
     [Fact]
-    public async Task Search_SortByDateAsc_PlacesNullsLast()
+    public async Task Search_SortByDateAsc_ReturnsOldestFirst()
     {
         var marker = $"DateAsc{Guid.NewGuid():N}";
         await SeedRecordsAsync(
             new SortSeed { Name = $"{marker} A", Client = "X", Date = new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc) },
             new SortSeed { Name = $"{marker} B", Client = "X", Date = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new SortSeed { Name = $"{marker} C", Client = "X", Date = null });
+            new SortSeed { Name = $"{marker} C", Client = "X", Date = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc) });
 
         var page = await GetSortedAsync(marker, "date", "asc");
 
         Assert.Equal(3, page.Items.Count);
-        Assert.NotNull(page.Items[0].Date);
-        Assert.NotNull(page.Items[1].Date);
-        Assert.Null(page.Items[2].Date);
-        Assert.True(page.Items[0].Date < page.Items[1].Date);
+        // Ascending: 1900-01-01 (sentinel) → 2024-01-01 → 2024-03-01
+        Assert.Equal(new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc), page.Items[0].Date);
+        Assert.Equal(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc), page.Items[1].Date);
+        Assert.Equal(new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), page.Items[2].Date);
     }
 
     [Fact]
-    public async Task Search_SortByDateDesc_PlacesNullsFirst()
+    public async Task Search_SortByDateDesc_ReturnsNewestFirst()
     {
         var marker = $"DateDesc{Guid.NewGuid():N}";
         await SeedRecordsAsync(
             new SortSeed { Name = $"{marker} A", Client = "X", Date = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new SortSeed { Name = $"{marker} B", Client = "X", Date = null },
+            new SortSeed { Name = $"{marker} B", Client = "X", Date = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
             new SortSeed { Name = $"{marker} C", Client = "X", Date = new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc) });
 
         var page = await GetSortedAsync(marker, "date", "desc");
 
         Assert.Equal(3, page.Items.Count);
-        Assert.Null(page.Items[0].Date);
-        Assert.NotNull(page.Items[1].Date);
-        Assert.NotNull(page.Items[2].Date);
-        Assert.True(page.Items[1].Date > page.Items[2].Date);
+        // Descending: 2024-03-01 → 2024-01-01 → 1900-01-01 (sentinel)
+        Assert.Equal(new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), page.Items[0].Date);
+        Assert.Equal(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc), page.Items[1].Date);
+        Assert.Equal(new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc), page.Items[2].Date);
     }
 
     // -------- Sort by client --------
@@ -123,20 +123,21 @@ public class FileRecordSortIntegrationTests : IClassFixture<PostgresWebApplicati
     // -------- Sort by file number (nullable) --------
 
     [Fact]
-    public async Task Search_SortByFileNumberAsc_PlacesNullsLast()
+    public async Task Search_SortByFileNumberAsc_ReturnsAscendingNumeric()
     {
         var marker = $"FNoAsc{Guid.NewGuid():N}";
         await SeedRecordsAsync(
-            new SortSeed { Name = $"{marker} A", Client = "X", FileNumber = "2000" },
-            new SortSeed { Name = $"{marker} B", Client = "X", FileNumber = null },
-            new SortSeed { Name = $"{marker} C", Client = "X", FileNumber = "1000" });
+            new SortSeed { Name = $"{marker} A", Client = "X", FileNumber = 2000 },
+            new SortSeed { Name = $"{marker} B", Client = "X", FileNumber = 0 },
+            new SortSeed { Name = $"{marker} C", Client = "X", FileNumber = 1000 });
 
         var page = await GetSortedAsync(marker, "file_number", "asc");
 
         Assert.Equal(3, page.Items.Count);
-        Assert.Equal("1000", page.Items[0].FileNumber);
-        Assert.Equal("2000", page.Items[1].FileNumber);
-        Assert.Null(page.Items[2].FileNumber);
+        // 0 (sentinel) < 1000 < 2000
+        Assert.Equal(0, page.Items[0].FileNumber);
+        Assert.Equal(1000, page.Items[1].FileNumber);
+        Assert.Equal(2000, page.Items[2].FileNumber);
     }
 
     // -------- Sort by flop disk number (nullable) --------
@@ -310,7 +311,7 @@ public class FileRecordSortIntegrationTests : IClassFixture<PostgresWebApplicati
         public required string Client { get; init; }
         public FileType FileType { get; init; } = FileType.CorelDRAW;
         public int? FlopDiskNumber { get; init; }
-        public DateTime? Date { get; init; }
-        public string? FileNumber { get; init; }
+        public DateTime Date { get; init; } = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        public int FileNumber { get; init; }
     }
 }

@@ -22,7 +22,7 @@ public class FileRecordSortPropertyTests
     private static readonly string[] SortDirections = ["asc", "desc"];
 
     private static readonly string[] NullableFields =
-        ["date", "file_number", "flop_disk_number"];
+        ["flop_disk_number"];
 
     private static readonly string[] InvalidSortByValues =
         ["not_a_field", "DROP TABLE", "", "  ", "unknown", "id", "created_at", "1; DELETE"];
@@ -163,9 +163,9 @@ public class FileRecordSortPropertyTests
             Name = GenerateShortString(rng),
             FileType = ValidFileTypes[rng.Next(ValidFileTypes.Length)],
             FlopDiskNumber = GenerateNullableInt(rng),
-            Date = GenerateNullableDate(rng),
+            Date = GenerateDate(rng),
             Client = GenerateShortString(rng),
-            FileNumber = GenerateNullableShortString(rng)
+            FileNumber = rng.Next(0, 10000)
         };
     }
 
@@ -176,8 +176,8 @@ public class FileRecordSortPropertyTests
         Client = "NullSeed",
         FileType = FileType.Unknown,
         FlopDiskNumber = null,
-        Date = null,
-        FileNumber = null
+        Date = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+        FileNumber = 0
     };
 
     private static string GenerateShortString(Random rng)
@@ -189,15 +189,11 @@ public class FileRecordSortPropertyTests
             .ToArray());
     }
 
-    private static string? GenerateNullableShortString(Random rng) =>
-        rng.Next(4) == 0 ? null : GenerateShortString(rng);
-
     private static int? GenerateNullableInt(Random rng) =>
         rng.Next(4) == 0 ? null : rng.Next(1, 101);
 
-    private static DateTime? GenerateNullableDate(Random rng)
+    private static DateTime GenerateDate(Random rng)
     {
-        if (rng.Next(4) == 0) return null;
         var year = rng.Next(2020, 2027);
         var month = rng.Next(1, 13);
         var day = rng.Next(1, 29);
@@ -232,8 +228,6 @@ public class FileRecordSortPropertyTests
 
     private static bool IsFieldNull(FileRecord r, string field) => field switch
     {
-        "date" => r.Date is null,
-        "file_number" => r.FileNumber is null,
         "flop_disk_number" => r.FlopDiskNumber is null,
         _ => throw new ArgumentException($"Field '{field}' is not nullable")
     };

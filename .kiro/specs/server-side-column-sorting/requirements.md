@@ -25,7 +25,7 @@ Server-side column sorting for the File Records table (`/file-records`) in Sinte
 2. WHEN the user clicks a Sortable_Column that is NOT the current sort column, THE table SHALL sort by that column in ascending order (ASC)
 3. WHEN the user clicks the Sortable_Column that IS already the current sort column, THE table SHALL toggle the Sort_Direction (ASC → DESC → ASC)
 4. THE "Ações" column SHALL NOT be sortable
-5. THE Default_Sort when the page first loads SHALL be `date DESC` (most recent first), matching the current behavior
+5. THE Default_Sort when the page first loads SHALL be `file_number DESC` (highest file number first)
 
 ### Requirement 2: Sort Direction Indicator
 

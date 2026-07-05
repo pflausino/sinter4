@@ -55,7 +55,7 @@
             <div class="field">
                 <label for="fileNumber" class="field-label">Número do Arquivo <span class="required" aria-hidden="true">*</span></label>
                 <div class="field-with-lock">
-                    <InputText id="fileNumber" @bind-Value="Model.FileNumber" class="form-control" placeholder="Ex: 1179" />
+                    <InputNumber id="fileNumber" @bind-Value="Model.FileNumber" class="form-control" placeholder="Ex: 1179" min="0" />
                     <button type="button"
                             class="btn-lock @(LockFileNumber ? "locked" : "")"
                             title="@(LockFileNumber ? "Desbloquear: limpar após salvar" : "Bloquear: manter valor após salvar")"

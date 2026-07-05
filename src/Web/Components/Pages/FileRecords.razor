@@ -140,12 +140,78 @@ else
         <table class="records-table" aria-label="Lista de fichas de arquivo">
             <thead>
                 <tr>
-                    @if (IsColumnVisible("name")) { <th scope="col">Nome</th> }
-                    @if (IsColumnVisible("type")) { <th scope="col">Tipo</th> }
-                    @if (IsColumnVisible("fileNumber")) { <th scope="col">Nº Arquivo</th> }
-                    @if (IsColumnVisible("client")) { <th scope="col">Cliente</th> }
-                    @if (IsColumnVisible("date")) { <th scope="col">Data</th> }
-                    @if (IsColumnVisible("flopDiskNumber")) { <th scope="col" class="col-disk">Nº Disquete</th> }
+                    @if (IsColumnVisible("name"))
+                    {
+                        <th scope="col"
+                            class="sortable @(CurrentSortField == SortFieldName ? "sorted" : "")"
+                            aria-sort="@GetAriaSortValue(SortFieldName)"
+                            tabindex="0"
+                            @onclick="() => SortBy(SortFieldName)"
+                            @onkeydown="@(async (KeyboardEventArgs e) => { if (e.Key == "Enter" || e.Key == " ") await SortBy(SortFieldName); })">
+                            <span class="th-label">Nome</span>
+                            <span class="sort-indicator" aria-hidden="true">@GetSortIcon(SortFieldName)</span>
+                        </th>
+                    }
+                    @if (IsColumnVisible("type"))
+                    {
+                        <th scope="col"
+                            class="sortable @(CurrentSortField == SortFieldType ? "sorted" : "")"
+                            aria-sort="@GetAriaSortValue(SortFieldType)"
+                            tabindex="0"
+                            @onclick="() => SortBy(SortFieldType)"
+                            @onkeydown="@(async (KeyboardEventArgs e) => { if (e.Key == "Enter" || e.Key == " ") await SortBy(SortFieldType); })">
+                            <span class="th-label">Tipo</span>
+                            <span class="sort-indicator" aria-hidden="true">@GetSortIcon(SortFieldType)</span>
+                        </th>
+                    }
+                    @if (IsColumnVisible("fileNumber"))
+                    {
+                        <th scope="col"
+                            class="sortable @(CurrentSortField == SortFieldFileNumber ? "sorted" : "")"
+                            aria-sort="@GetAriaSortValue(SortFieldFileNumber)"
+                            tabindex="0"
+                            @onclick="() => SortBy(SortFieldFileNumber)"
+                            @onkeydown="@(async (KeyboardEventArgs e) => { if (e.Key == "Enter" || e.Key == " ") await SortBy(SortFieldFileNumber); })">
+                            <span class="th-label">Nº Arquivo</span>
+                            <span class="sort-indicator" aria-hidden="true">@GetSortIcon(SortFieldFileNumber)</span>
+                        </th>
+                    }
+                    @if (IsColumnVisible("client"))
+                    {
+                        <th scope="col"
+                            class="sortable @(CurrentSortField == SortFieldClient ? "sorted" : "")"
+                            aria-sort="@GetAriaSortValue(SortFieldClient)"
+                            tabindex="0"
+                            @onclick="() => SortBy(SortFieldClient)"
+                            @onkeydown="@(async (KeyboardEventArgs e) => { if (e.Key == "Enter" || e.Key == " ") await SortBy(SortFieldClient); })">
+                            <span class="th-label">Cliente</span>
+                            <span class="sort-indicator" aria-hidden="true">@GetSortIcon(SortFieldClient)</span>
+                        </th>
+                    }
+                    @if (IsColumnVisible("date"))
+                    {
+                        <th scope="col"
+                            class="sortable @(CurrentSortField == SortFieldDate ? "sorted" : "")"
+                            aria-sort="@GetAriaSortValue(SortFieldDate)"
+                            tabindex="0"
+                            @onclick="() => SortBy(SortFieldDate)"
+                            @onkeydown="@(async (KeyboardEventArgs e) => { if (e.Key == "Enter" || e.Key == " ") await SortBy(SortFieldDate); })">
+                            <span class="th-label">Data</span>
+                            <span class="sort-indicator" aria-hidden="true">@GetSortIcon(SortFieldDate)</span>
+                        </th>
+                    }
+                    @if (IsColumnVisible("flopDiskNumber"))
+                    {
+                        <th scope="col"
+                            class="sortable col-disk @(CurrentSortField == SortFieldFlopDisk ? "sorted" : "")"
+                            aria-sort="@GetAriaSortValue(SortFieldFlopDisk)"
+                            tabindex="0"
+                            @onclick="() => SortBy(SortFieldFlopDisk)"
+                            @onkeydown="@(async (KeyboardEventArgs e) => { if (e.Key == "Enter" || e.Key == " ") await SortBy(SortFieldFlopDisk); })">
+                            <span class="th-label">Nº Disquete</span>
+                            <span class="sort-indicator" aria-hidden="true">@GetSortIcon(SortFieldFlopDisk)</span>
+                        </th>
+                    }
                     @if (IsColumnVisible("actions")) { <th scope="col" class="col-actions">Ações</th> }
                 </tr>
             </thead>
@@ -155,9 +221,9 @@ else
                     <tr>
                         @if (IsColumnVisible("name")) { <td class="cell-name">@record.Name</td> }
                         @if (IsColumnVisible("type")) { <td><span class="badge-type badge-@record.FileType.ToString().ToLowerInvariant()">@record.FileType</span></td> }
-                        @if (IsColumnVisible("fileNumber")) { <td>@(record.FileNumber ?? "—")</td> }
+                        @if (IsColumnVisible("fileNumber")) { <td>@record.FileNumber</td> }
                         @if (IsColumnVisible("client")) { <td>@record.Client</td> }
-                        @if (IsColumnVisible("date")) { <td class="cell-date">@(record.Date?.ToString("dd/MM/yyyy") ?? "Sem data")</td> }
+                        @if (IsColumnVisible("date")) { <td class="cell-date">@record.Date.ToString("dd/MM/yyyy")</td> }
                         @if (IsColumnVisible("flopDiskNumber")) { <td class="col-disk">@(record.FlopDiskNumber?.ToString() ?? "—")</td> }
                         @if (IsColumnVisible("actions"))
                         {
@@ -179,6 +245,27 @@ else
     </div>
 
     @* Mobile card view *@
+    <div class="mobile-sort-control" role="group" aria-label="Ordenar registros">
+        <label for="mobile-sort-field" class="mobile-sort-label">Ordenar por:</label>
+        <select id="mobile-sort-field"
+                class="mobile-sort-select"
+                value="@CurrentSortField"
+                @onchange="ChangeMobileSortField">
+            <option value="@SortFieldName">Nome</option>
+            <option value="@SortFieldType">Tipo</option>
+            <option value="@SortFieldFileNumber">Nº Arquivo</option>
+            <option value="@SortFieldClient">Cliente</option>
+            <option value="@SortFieldDate">Data</option>
+            <option value="@SortFieldFlopDisk">Nº Disquete</option>
+        </select>
+        <button type="button"
+                class="btn-sort-dir"
+                aria-label="@(CurrentSortDirection == SortDirAsc ? "Ordem crescente. Clique para inverter." : "Ordem decrescente. Clique para inverter.")"
+                @onclick="ToggleSortDirection">
+            @(CurrentSortDirection == SortDirAsc ? "↑" : "↓")
+        </button>
+    </div>
+
     <div class="cards-container">
         @foreach (var record in Records)
         {
@@ -201,7 +288,7 @@ else
                             <span class="detail-value">@record.Client</span>
                         </div>
                     }
-                    @if (!string.IsNullOrWhiteSpace(record.FileNumber) && IsColumnVisible("fileNumber"))
+                    @if (IsColumnVisible("fileNumber"))
                     {
                         <div class="card-detail">
                             <span class="detail-label">Arquivo</span>
@@ -212,7 +299,7 @@ else
                     {
                         <div class="card-detail">
                             <span class="detail-label">Data</span>
-                            <span class="detail-value">@(record.Date?.ToString("dd/MM/yyyy") ?? "Sem data")</span>
+                            <span class="detail-value">@record.Date.ToString("dd/MM/yyyy")</span>
                         </div>
                     }
                     @if (record.FlopDiskNumber.HasValue && IsColumnVisible("flopDiskNumber"))

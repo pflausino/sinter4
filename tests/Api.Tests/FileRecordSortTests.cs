@@ -21,7 +21,7 @@ public class FileRecordSortTests
             FlopDiskNumber = 3,
             Date = new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc),
             Client = "Charlie",
-            FileNumber = "1001"
+            FileNumber = 1001
         },
         new FileRecord
         {
@@ -31,7 +31,7 @@ public class FileRecordSortTests
             FlopDiskNumber = 1,
             Date = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             Client = "Alfa",
-            FileNumber = null
+            FileNumber = 0
         },
         new FileRecord
         {
@@ -39,9 +39,9 @@ public class FileRecordSortTests
             Name = "Charlie",
             FileType = FileType.Illustrator,
             FlopDiskNumber = null,
-            Date = null,
+            Date = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             Client = "Bravo",
-            FileNumber = "1002"
+            FileNumber = 1002
         }
     ];
 
@@ -116,48 +116,50 @@ public class FileRecordSortTests
             r => Assert.Equal("Alfa", r.Client));
     }
 
-    // -------- Date (nullable) --------
+    // -------- Date (non-nullable; sentinel 1900-01-01 acts as "oldest" for backfilled rows) --------
 
     [Fact]
-    public void ApplySort_ByDateAsc_PlacesNullsLast()
+    public void ApplySort_ByDateAsc_ReturnsOldestFirst()
     {
         var results = FileRecordService.ApplySort(BuildSampleRecords().AsQueryable(), "date", "asc").ToList();
 
-        Assert.Equal(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc), results[0].Date);
-        Assert.Equal(new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), results[1].Date);
-        Assert.Null(results[2].Date);
+        // 1900-01-01 (sentinel) < 2024-01-01 < 2024-03-01
+        Assert.Equal(new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc), results[0].Date);
+        Assert.Equal(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc), results[1].Date);
+        Assert.Equal(new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), results[2].Date);
     }
 
     [Fact]
-    public void ApplySort_ByDateDesc_PlacesNullsFirst()
+    public void ApplySort_ByDateDesc_ReturnsNewestFirst()
     {
         var results = FileRecordService.ApplySort(BuildSampleRecords().AsQueryable(), "date", "desc").ToList();
 
-        Assert.Null(results[0].Date);
-        Assert.Equal(new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), results[1].Date);
-        Assert.Equal(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc), results[2].Date);
+        Assert.Equal(new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), results[0].Date);
+        Assert.Equal(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc), results[1].Date);
+        Assert.Equal(new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc), results[2].Date);
     }
 
-    // -------- File number (nullable string) --------
+    // -------- File number (non-nullable int; sentinel 0 for backfilled rows) --------
 
     [Fact]
-    public void ApplySort_ByFileNumberAsc_PlacesNullsLast()
+    public void ApplySort_ByFileNumberAsc_ReturnsAscendingNumeric()
     {
         var results = FileRecordService.ApplySort(BuildSampleRecords().AsQueryable(), "file_number", "asc").ToList();
 
-        Assert.Equal("1001", results[0].FileNumber);
-        Assert.Equal("1002", results[1].FileNumber);
-        Assert.Null(results[2].FileNumber);
+        // 0 (sentinel) < 1001 < 1002
+        Assert.Equal(0, results[0].FileNumber);
+        Assert.Equal(1001, results[1].FileNumber);
+        Assert.Equal(1002, results[2].FileNumber);
     }
 
     [Fact]
-    public void ApplySort_ByFileNumberDesc_PlacesNullsFirst()
+    public void ApplySort_ByFileNumberDesc_ReturnsDescendingNumeric()
     {
         var results = FileRecordService.ApplySort(BuildSampleRecords().AsQueryable(), "file_number", "desc").ToList();
 
-        Assert.Null(results[0].FileNumber);
-        Assert.Equal("1002", results[1].FileNumber);
-        Assert.Equal("1001", results[2].FileNumber);
+        Assert.Equal(1002, results[0].FileNumber);
+        Assert.Equal(1001, results[1].FileNumber);
+        Assert.Equal(0, results[2].FileNumber);
     }
 
     // -------- Flop disk number (nullable int) --------
@@ -189,10 +191,10 @@ public class FileRecordSortTests
     {
         var results = FileRecordService.ApplySort(BuildSampleRecords().AsQueryable(), "not_a_field", "asc").ToList();
 
-        // Falls back to date; default direction for date is DESC → NULLS FIRST
-        Assert.Null(results[0].Date);
-        Assert.Equal(new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), results[1].Date);
-        Assert.Equal(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc), results[2].Date);
+        // Falls back to date DESC — newest first
+        Assert.Equal(new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), results[0].Date);
+        Assert.Equal(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc), results[1].Date);
+        Assert.Equal(new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc), results[2].Date);
     }
 
     [Fact]
@@ -200,9 +202,9 @@ public class FileRecordSortTests
     {
         var results = FileRecordService.ApplySort(BuildSampleRecords().AsQueryable(), null, null).ToList();
 
-        Assert.Null(results[0].Date);
-        Assert.Equal(new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), results[1].Date);
-        Assert.Equal(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc), results[2].Date);
+        Assert.Equal(new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), results[0].Date);
+        Assert.Equal(new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc), results[1].Date);
+        Assert.Equal(new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc), results[2].Date);
     }
 
     [Fact]
@@ -221,8 +223,8 @@ public class FileRecordSortTests
     {
         var results = FileRecordService.ApplySort(BuildSampleRecords().AsQueryable(), "date", null).ToList();
 
-        // date + null direction → DESC → nulls first
-        Assert.Null(results[0].Date);
+        // date + null direction → DESC → newest first
+        Assert.Equal(new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), results[0].Date);
     }
 
     [Fact]

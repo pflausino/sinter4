@@ -26,6 +26,6 @@ public record CreateFileRecordRequest(
     [NotWhiteSpace(ErrorMessage = "O cliente não pode ser vazio.")]
     string Client,
 
-    [MaxLength(50, ErrorMessage = "O número do arquivo não pode exceder 50 caracteres.")]
-    string? FileNumber = null
+    [Range(0, int.MaxValue, ErrorMessage = "O número do arquivo deve ser um inteiro não-negativo.")]
+    int FileNumber = 0
 );

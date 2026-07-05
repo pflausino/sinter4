@@ -12,6 +12,17 @@ public partial class FileRecords : IAsyncDisposable
 {
     private const int PageSize = 50;
 
+    // Sort field constants — match API contract (snake_case, whitelisted server-side).
+    internal const string SortFieldName = "name";
+    internal const string SortFieldType = "file_type";
+    internal const string SortFieldFileNumber = "file_number";
+    internal const string SortFieldClient = "client";
+    internal const string SortFieldDate = "date";
+    internal const string SortFieldFlopDisk = "flop_disk_number";
+
+    internal const string SortDirAsc = "asc";
+    internal const string SortDirDesc = "desc";
+
     [Inject] private AuthenticatedHttpClient ApiClient { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
@@ -34,6 +45,10 @@ public partial class FileRecords : IAsyncDisposable
     private bool IsSearchActive { get; set; }
     private int? SearchResultCount { get; set; }
     private string? SearchedTerm { get; set; }
+
+    // Sort state — default matches the UX preference: newest file numbers first when the page loads.
+    private string CurrentSortField { get; set; } = SortFieldFileNumber;
+    private string CurrentSortDirection { get; set; } = SortDirDesc;
 
     // Column visibility state
     private static readonly ColumnDefinition[] AllColumns =
@@ -110,6 +125,128 @@ public partial class FileRecords : IAsyncDisposable
         }
     }
 
+    // Sort methods
+
+    /// <summary>
+    /// Called when a sortable column header is clicked. If the same field is clicked,
+    /// toggles ASC ↔ DESC. Otherwise switches to the new field starting in ASC.
+    /// Resets pagination and re-fetches from offset 0 so the new sort applies to all pages.
+    /// </summary>
+    private async Task SortBy(string field)
+    {
+        if (field == CurrentSortField)
+        {
+            CurrentSortDirection = CurrentSortDirection == SortDirAsc ? SortDirDesc : SortDirAsc;
+        }
+        else
+        {
+            CurrentSortField = field;
+            CurrentSortDirection = SortDirAsc;
+        }
+
+        await ReloadWithCurrentSort();
+    }
+
+    /// <summary>
+    /// Handles mobile sort field selection from the dropdown. Direction resets to ASC
+    /// when the field changes (matches desktop click behavior).
+    /// </summary>
+    private async Task ChangeMobileSortField(ChangeEventArgs e)
+    {
+        var newField = e.Value?.ToString() ?? SortFieldDate;
+        if (newField == CurrentSortField) return;
+
+        CurrentSortField = newField;
+        CurrentSortDirection = SortDirAsc;
+        await ReloadWithCurrentSort();
+    }
+
+    /// <summary>
+    /// Toggles the sort direction (ASC ↔ DESC) without changing the field.
+    /// Used by the mobile direction toggle button.
+    /// </summary>
+    private async Task ToggleSortDirection()
+    {
+        CurrentSortDirection = CurrentSortDirection == SortDirAsc ? SortDirDesc : SortDirAsc;
+        await ReloadWithCurrentSort();
+    }
+
+    private async Task ReloadWithCurrentSort()
+    {
+        _observerInitialized = false;
+        if (IsSearchActive) await ReloadSearchWithCurrentSort();
+        else await LoadRecords();
+    }
+
+    /// <summary>
+    /// Re-runs the currently active search with the new sort params.
+    /// Uses <see cref="SearchedTerm"/> (the committed search) instead of
+    /// <see cref="SearchTerm"/> (the input box) so a user editing the box
+    /// but not submitting doesn't lose their current results on sort change.
+    /// </summary>
+    private async Task ReloadSearchWithCurrentSort()
+    {
+        if (string.IsNullOrWhiteSpace(SearchedTerm))
+        {
+            await LoadRecords();
+            return;
+        }
+
+        IsSearching = true;
+        HasSearchError = false;
+
+        try
+        {
+            var client = await ApiClient.CreateClientAsync();
+            var encoded = Uri.EscapeDataString(SearchedTerm);
+            var response = await client.GetFromJsonAsync<PaginatedResponse<FileRecordResponse>>(
+                $"/api/file-records/search?q={encoded}&offset=0&limit={PageSize}{BuildSortQueryString()}");
+
+            if (response is not null)
+            {
+                Records = response.Items;
+                SearchResultCount = response.TotalCount;
+                HasMore = response.HasMore;
+            }
+            else
+            {
+                Records = [];
+                SearchResultCount = 0;
+                HasMore = false;
+            }
+        }
+        catch
+        {
+            HasSearchError = true;
+        }
+        finally
+        {
+            IsSearching = false;
+        }
+    }
+
+    /// <summary>
+    /// Returns the aria-sort value for a header: "ascending", "descending", or "none".
+    /// </summary>
+    private string GetAriaSortValue(string field)
+    {
+        if (CurrentSortField != field) return "none";
+        return CurrentSortDirection == SortDirAsc ? "ascending" : "descending";
+    }
+
+    /// <summary>
+    /// Returns the visual sort indicator glyph for a header. Active columns show
+    /// ▲ or ▼; inactive sortable columns show a subtle ↕.
+    /// </summary>
+    private string GetSortIcon(string field)
+    {
+        if (CurrentSortField != field) return "↕";
+        return CurrentSortDirection == SortDirAsc ? "▲" : "▼";
+    }
+
+    private string BuildSortQueryString() =>
+        $"&sortBy={CurrentSortField}&sortDir={CurrentSortDirection}";
+
     // Delete confirmation modal state
     private bool ShowDeleteModal { get; set; }
     private bool IsDeleting { get; set; }
@@ -155,7 +292,7 @@ public partial class FileRecords : IAsyncDisposable
         {
             var client = await ApiClient.CreateClientAsync();
             var response = await client.GetFromJsonAsync<PaginatedResponse<FileRecordResponse>>(
-                $"/api/file-records?offset=0&limit={PageSize}");
+                $"/api/file-records?offset=0&limit={PageSize}{BuildSortQueryString()}");
 
             if (response is not null)
             {
@@ -191,7 +328,7 @@ public partial class FileRecords : IAsyncDisposable
             {
                 var encoded = Uri.EscapeDataString(SearchedTerm);
                 var response = await client.GetFromJsonAsync<PaginatedResponse<FileRecordResponse>>(
-                    $"/api/file-records/search?q={encoded}&offset={Records.Count}&limit={PageSize}");
+                    $"/api/file-records/search?q={encoded}&offset={Records.Count}&limit={PageSize}{BuildSortQueryString()}");
 
                 if (response is not null)
                 {
@@ -203,7 +340,7 @@ public partial class FileRecords : IAsyncDisposable
             else
             {
                 var response = await client.GetFromJsonAsync<PaginatedResponse<FileRecordResponse>>(
-                    $"/api/file-records?offset={Records.Count}&limit={PageSize}");
+                    $"/api/file-records?offset={Records.Count}&limit={PageSize}{BuildSortQueryString()}");
 
                 if (response is not null)
                 {
@@ -241,7 +378,7 @@ public partial class FileRecords : IAsyncDisposable
             var client = await ApiClient.CreateClientAsync();
             var encoded = Uri.EscapeDataString(SearchTerm.Trim());
             var response = await client.GetFromJsonAsync<PaginatedResponse<FileRecordResponse>>(
-                $"/api/file-records/search?q={encoded}&offset=0&limit={PageSize}");
+                $"/api/file-records/search?q={encoded}&offset=0&limit={PageSize}{BuildSortQueryString()}");
 
             if (response is not null)
             {
