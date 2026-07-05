@@ -30,7 +30,7 @@ public class FileRecordService : IFileRecordService
     public async Task<List<FileRecordResponse>> GetAllAsync()
     {
         return await _dbContext.FileRecords
-            .OrderByDescending(f => f.Date ?? DateTime.MinValue)
+            .OrderByDescending(f => f.Date)
             .Take(100)
             .Select(f => ToResponse(f))
             .ToListAsync();
@@ -68,7 +68,7 @@ public class FileRecordService : IFileRecordService
             FlopDiskNumber = request.FlopDiskNumber,
             Date = DateTime.SpecifyKind(request.Date, DateTimeKind.Utc),
             Client = request.Client.Trim(),
-            FileNumber = NormalizeOptional(request.FileNumber)
+            FileNumber = request.FileNumber
         };
 
         _dbContext.FileRecords.Add(entity);
@@ -85,11 +85,9 @@ public class FileRecordService : IFileRecordService
         entity.Name = request.Name.Trim();
         entity.FileType = request.FileType;
         entity.FlopDiskNumber = request.FlopDiskNumber;
-        entity.Date = request.Date.HasValue
-            ? DateTime.SpecifyKind(request.Date.Value, DateTimeKind.Utc)
-            : null;
+        entity.Date = DateTime.SpecifyKind(request.Date, DateTimeKind.Utc);
         entity.Client = request.Client.Trim();
-        entity.FileNumber = NormalizeOptional(request.FileNumber);
+        entity.FileNumber = request.FileNumber;
 
         await _dbContext.SaveChangesAsync();
 
@@ -173,20 +171,20 @@ public class FileRecordService : IFileRecordService
             ("file_type", false) => query.OrderBy(f => f.FileType),
             ("file_type", true) => query.OrderByDescending(f => f.FileType),
 
-            ("file_number", false) => query.OrderBy(f => f.FileNumber == null).ThenBy(f => f.FileNumber),
-            ("file_number", true) => query.OrderByDescending(f => f.FileNumber == null).ThenByDescending(f => f.FileNumber),
+            ("file_number", false) => query.OrderBy(f => f.FileNumber),
+            ("file_number", true) => query.OrderByDescending(f => f.FileNumber),
 
             ("client", false) => query.OrderBy(f => f.Client),
             ("client", true) => query.OrderByDescending(f => f.Client),
 
-            ("date", false) => query.OrderBy(f => f.Date == null).ThenBy(f => f.Date),
-            ("date", true) => query.OrderByDescending(f => f.Date == null).ThenByDescending(f => f.Date),
+            ("date", false) => query.OrderBy(f => f.Date),
+            ("date", true) => query.OrderByDescending(f => f.Date),
 
             ("flop_disk_number", false) => query.OrderBy(f => f.FlopDiskNumber == null).ThenBy(f => f.FlopDiskNumber),
             ("flop_disk_number", true) => query.OrderByDescending(f => f.FlopDiskNumber == null).ThenByDescending(f => f.FlopDiskNumber),
 
-            // Safety net — falls back to date DESC NULLS FIRST
-            _ => query.OrderByDescending(f => f.Date == null).ThenByDescending(f => f.Date)
+            // Safety net — falls back to date DESC (column is NOT NULL, no null-handling needed)
+            _ => query.OrderByDescending(f => f.Date)
         };
 
         return ordered.ThenBy(f => f.Id);
@@ -328,7 +326,4 @@ public class FileRecordService : IFileRecordService
 
     private static FileRecordResponse ToResponse(FileRecord entity) =>
         new(entity.Id, entity.Name, entity.FileType, entity.FlopDiskNumber, entity.Date, entity.Client, entity.FileNumber);
-
-    private static string? NormalizeOptional(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

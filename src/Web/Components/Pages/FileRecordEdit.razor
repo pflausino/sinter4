@@ -72,7 +72,7 @@ else
 
                 <div class="field">
                     <label for="fileNumber" class="field-label">Número do Arquivo</label>
-                    <InputText id="fileNumber" @bind-Value="Model.FileNumber" class="form-control" placeholder="Ex: 1179" />
+                    <InputNumber id="fileNumber" @bind-Value="Model.FileNumber" class="form-control" placeholder="Ex: 1179" min="0" />
                     <ValidationMessage For="() => Model.FileNumber" />
                 </div>
             </div>

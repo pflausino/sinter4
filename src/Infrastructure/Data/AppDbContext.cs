@@ -26,9 +26,9 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             entity.Property(e => e.FileType).IsRequired();
             entity.Property(e => e.FlopDiskNumber);
-            entity.Property(e => e.Date).HasColumnType("timestamptz").IsRequired(false);
+            entity.Property(e => e.Date).HasColumnType("timestamptz").IsRequired();
             entity.Property(e => e.Client).IsRequired().HasMaxLength(200);
-            entity.Property(e => e.FileNumber).HasMaxLength(50);
+            entity.Property(e => e.FileNumber).IsRequired();
         });
     }
 }

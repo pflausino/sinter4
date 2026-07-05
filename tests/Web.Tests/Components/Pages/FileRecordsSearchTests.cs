@@ -71,7 +71,7 @@ public class FileRecordsSearchTests : BunitContext
 
         var searchResults = new List<FileRecordResponse>
         {
-            new(Guid.NewGuid(), "Logo Design", FileType.CorelDRAW, null, DateTime.Now, "Acme Corp", "001")
+            new(Guid.NewGuid(), "Logo Design", FileType.CorelDRAW, null, DateTime.Now, "Acme Corp", 1)
         };
         SetupSearchResponse(searchResults);
 
@@ -96,7 +96,7 @@ public class FileRecordsSearchTests : BunitContext
 
         var searchResults = new List<FileRecordResponse>
         {
-            new(Guid.NewGuid(), "Banner Evento", FileType.Photoshop, null, DateTime.Now, "Cliente X", "002")
+            new(Guid.NewGuid(), "Banner Evento", FileType.Photoshop, null, DateTime.Now, "Cliente X", 2)
         };
         SetupSearchResponse(searchResults);
 
@@ -185,9 +185,9 @@ public class FileRecordsSearchTests : BunitContext
 
         var searchResults = new List<FileRecordResponse>
         {
-            new(Guid.NewGuid(), "Logo Empresa A", FileType.CorelDRAW, null, DateTime.Now, "Cliente A", "001"),
-            new(Guid.NewGuid(), "Logo Empresa B", FileType.Illustrator, null, DateTime.Now, "Cliente B", "002"),
-            new(Guid.NewGuid(), "Logo Marca C", FileType.Photoshop, null, DateTime.Now, "Cliente C", "003")
+            new(Guid.NewGuid(), "Logo Empresa A", FileType.CorelDRAW, null, DateTime.Now, "Cliente A", 1),
+            new(Guid.NewGuid(), "Logo Empresa B", FileType.Illustrator, null, DateTime.Now, "Cliente B", 2),
+            new(Guid.NewGuid(), "Logo Marca C", FileType.Photoshop, null, DateTime.Now, "Cliente C", 3)
         };
         SetupSearchResponse(searchResults);
 
@@ -214,7 +214,7 @@ public class FileRecordsSearchTests : BunitContext
         // Perform a search first
         var searchResults = new List<FileRecordResponse>
         {
-            new(Guid.NewGuid(), "Logo Design", FileType.CorelDRAW, null, DateTime.Now, "Acme", "001")
+            new(Guid.NewGuid(), "Logo Design", FileType.CorelDRAW, null, DateTime.Now, "Acme", 1)
         };
         SetupSearchResponse(searchResults);
 
@@ -323,9 +323,9 @@ public class FileRecordsSearchTests : BunitContext
 
     private static List<FileRecordResponse> GetSampleRecords() =>
     [
-        new(Guid.NewGuid(), "Cartão Visita João", FileType.CorelDRAW, 1, new DateTime(2024, 1, 15), "João Silva", "A001"),
-        new(Guid.NewGuid(), "Banner Loja", FileType.Photoshop, 2, new DateTime(2024, 2, 20), "Maria Loja", "B002"),
-        new(Guid.NewGuid(), "Folder Evento", FileType.Illustrator, null, new DateTime(2024, 3, 10), "Carlos Eventos", "C003")
+        new(Guid.NewGuid(), "Cartão Visita João", FileType.CorelDRAW, 1, new DateTime(2024, 1, 15), "João Silva", 1001),
+        new(Guid.NewGuid(), "Banner Loja", FileType.Photoshop, 2, new DateTime(2024, 2, 20), "Maria Loja", 2002),
+        new(Guid.NewGuid(), "Folder Evento", FileType.Illustrator, null, new DateTime(2024, 3, 10), "Carlos Eventos", 3003)
     ];
 }
 

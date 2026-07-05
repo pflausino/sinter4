@@ -17,7 +17,8 @@ public record UpdateFileRecordRequest(
 
     int? FlopDiskNumber,
 
-    DateTime? Date,
+    [Required(ErrorMessage = "A data é obrigatória.")]
+    DateTime Date,
 
     [Required(ErrorMessage = "O cliente é obrigatório.")]
     [MinLength(1, ErrorMessage = "O cliente não pode ser vazio.")]
@@ -25,6 +26,6 @@ public record UpdateFileRecordRequest(
     [NotWhiteSpace(ErrorMessage = "O cliente não pode ser vazio.")]
     string Client,
 
-    [MaxLength(50, ErrorMessage = "O número do arquivo não pode exceder 50 caracteres.")]
-    string? FileNumber = null
+    [Range(0, int.MaxValue, ErrorMessage = "O número do arquivo deve ser um inteiro não-negativo.")]
+    int FileNumber = 0
 );
