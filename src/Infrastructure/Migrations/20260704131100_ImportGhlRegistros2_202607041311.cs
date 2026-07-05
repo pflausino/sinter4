@@ -18,12 +18,11 @@ namespace Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Remove all records inserted by this import based on file_number values used
-            migrationBuilder.Sql("""
-                DELETE FROM public.file_records
-                WHERE file_number IN ('2040', '2041')
-                  AND date = TIMESTAMPTZ '2026-06-17 00:00:00+00';
-                """);
+            // Surgically remove only the rows this import inserted, matched by primary key,
+            // so records added later that happen to share the same file_number/date are preserved.
+            var sql = EmbeddedResourceHelper.ReadResource(
+                "Infrastructure.Migrations.Scripts.import-ghl-registros2-202607041311.down.sql");
+            migrationBuilder.Sql(sql);
         }
     }
 }

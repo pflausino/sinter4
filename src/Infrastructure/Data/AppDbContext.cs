@@ -23,12 +23,12 @@ public class AppDbContext : DbContext
             entity.ToTable("file_records");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnType("uuid");
-            entity.Property(e => e.Name).IsRequired();
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             entity.Property(e => e.FileType).IsRequired();
             entity.Property(e => e.FlopDiskNumber);
             entity.Property(e => e.Date).HasColumnType("timestamptz").IsRequired(false);
-            entity.Property(e => e.Client).IsRequired();
-            entity.Property(e => e.FileNumber);
+            entity.Property(e => e.Client).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.FileNumber).HasMaxLength(50);
         });
     }
 }
