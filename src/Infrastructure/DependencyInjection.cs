@@ -14,8 +14,6 @@ public static class InfrastructureServiceExtensions
     {
         FirebaseInitializer.Initialize(configuration);
 
-        services.AddScoped<IAuthService, FirebaseAuthService>();
-
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
         services.AddDbContext<AppDbContext>(options =>

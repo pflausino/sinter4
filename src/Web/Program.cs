@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Components.Authorization;
 using Web.Components;
@@ -11,6 +12,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHealthChecks();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Persist Data Protection keys so auth cookies and ProtectedLocalStorage tokens
+// survive container restarts/redeploys. Without a stable key ring every deploy
+// would invalidate every user's stored Firebase token, forcing a re-login.
+// Path is opt-in via config (set in production compose); unset = default in-memory
+// keys for local dev, which is fine there.
+var dataProtectionKeyPath = builder.Configuration["DataProtection:KeyPath"];
+if (!string.IsNullOrWhiteSpace(dataProtectionKeyPath))
+{
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeyPath))
+        .SetApplicationName("SinterPrintsWeb");
+}
 
 builder.Services.AddAuthentication(options =>
 {

@@ -31,6 +31,9 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
       ApiBaseUrl: ${API_BASE_URL}
+      DataProtection__KeyPath: /keys
+    volumes:
+      - web-dataprotection-keys:/keys
     depends_on:
       - api
     networks:
@@ -41,3 +44,6 @@ networks:
     external: true
   internal:
     external: true
+
+volumes:
+  web-dataprotection-keys:

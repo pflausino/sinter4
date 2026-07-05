@@ -124,3 +124,7 @@ publish/
 *.bak
 *.tmp
 *.orig
+
+# Legacy data dumps (import sources — never commit client data)
+ghl_*.csv
+*_registros*.csv
