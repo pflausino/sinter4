@@ -40,8 +40,8 @@ namespace Infrastructure.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("date");
 
-                    b.Property<int>("FileNumber")
-                        .HasColumnType("integer")
+                    b.Property<long>("FileNumber")
+                        .HasColumnType("bigint")
                         .HasColumnName("file_number");
 
                     b.Property<int>("FileType")

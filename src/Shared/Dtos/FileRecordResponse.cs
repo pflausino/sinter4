@@ -9,5 +9,5 @@ public record FileRecordResponse(
     int? FlopDiskNumber,
     DateTime Date,
     string Client,
-    int FileNumber
+    long FileNumber
 );
