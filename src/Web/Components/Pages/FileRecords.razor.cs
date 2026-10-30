@@ -34,7 +34,13 @@ public partial class FileRecords : IAsyncDisposable
     private int TotalCount { get; set; }
     private bool HasMore { get; set; }
     private bool IsLoadingMore { get; set; }
+    private bool HasLoadMoreError { get; set; }
     private ElementReference SentinelRef { get; set; }
+
+    // Incremented whenever the list is replaced (load, search, sort, clear). Responses that arrive
+    // after a newer request started are discarded, so a slow old response can't overwrite the
+    // current results or append rows from a different query.
+    private int _listVersion;
     private DotNetObjectReference<FileRecords>? _dotNetRef;
     private bool _observerInitialized;
 
@@ -192,6 +198,7 @@ public partial class FileRecords : IAsyncDisposable
             return;
         }
 
+        var version = StartListRequest();
         IsSearching = true;
         HasSearchError = false;
 
@@ -201,6 +208,8 @@ public partial class FileRecords : IAsyncDisposable
             var encoded = Uri.EscapeDataString(SearchedTerm);
             var response = await client.GetFromJsonAsync<PaginatedResponse<FileRecordResponse>>(
                 $"/api/file-records/search?q={encoded}&offset=0&limit={PageSize}{BuildSortQueryString()}");
+
+            if (!IsCurrentListRequest(version)) return;
 
             if (response is not null)
             {
@@ -217,13 +226,28 @@ public partial class FileRecords : IAsyncDisposable
         }
         catch
         {
-            HasSearchError = true;
+            if (IsCurrentListRequest(version)) HasSearchError = true;
         }
         finally
         {
-            IsSearching = false;
+            if (IsCurrentListRequest(version)) IsSearching = false;
         }
     }
+
+    /// <summary>
+    /// Starts a request that replaces the list and invalidates any request still in flight.
+    /// Clears the loading flags owned by the superseded request so they can't get stuck on.
+    /// </summary>
+    private int StartListRequest()
+    {
+        IsLoading = false;
+        IsSearching = false;
+        HasLoadMoreError = false;
+        DeleteErrorName = null;
+        return ++_listVersion;
+    }
+
+    private bool IsCurrentListRequest(int version) => version == _listVersion;
 
     /// <summary>
     /// Returns the aria-sort value for a header: "ascending", "descending", or "none".
@@ -252,6 +276,7 @@ public partial class FileRecords : IAsyncDisposable
     private bool IsDeleting { get; set; }
     private Guid? DeleteTargetId { get; set; }
     private string? DeleteTargetName { get; set; }
+    private string? DeleteErrorName { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -283,6 +308,7 @@ public partial class FileRecords : IAsyncDisposable
 
     private async Task LoadRecords()
     {
+        var version = StartListRequest();
         IsLoading = true;
         HasError = false;
         Records = [];
@@ -294,6 +320,8 @@ public partial class FileRecords : IAsyncDisposable
             var response = await client.GetFromJsonAsync<PaginatedResponse<FileRecordResponse>>(
                 $"/api/file-records?offset=0&limit={PageSize}{BuildSortQueryString()}");
 
+            if (!IsCurrentListRequest(version)) return;
+
             if (response is not null)
             {
                 Records = response.Items;
@@ -303,12 +331,14 @@ public partial class FileRecords : IAsyncDisposable
         }
         catch
         {
+            if (!IsCurrentListRequest(version)) return;
+
             Records = [];
             HasError = true;
         }
         finally
         {
-            IsLoading = false;
+            if (IsCurrentListRequest(version)) IsLoading = false;
         }
     }
 
@@ -317,7 +347,9 @@ public partial class FileRecords : IAsyncDisposable
     {
         if (IsLoadingMore || !HasMore) return;
 
+        var version = _listVersion;
         IsLoadingMore = true;
+        HasLoadMoreError = false;
         StateHasChanged();
 
         try
@@ -329,6 +361,9 @@ public partial class FileRecords : IAsyncDisposable
                 var encoded = Uri.EscapeDataString(SearchedTerm);
                 var response = await client.GetFromJsonAsync<PaginatedResponse<FileRecordResponse>>(
                     $"/api/file-records/search?q={encoded}&offset={Records.Count}&limit={PageSize}{BuildSortQueryString()}");
+
+                // The list was replaced while this page was loading — its rows belong to another query
+                if (!IsCurrentListRequest(version)) return;
 
                 if (response is not null)
                 {
@@ -342,6 +377,8 @@ public partial class FileRecords : IAsyncDisposable
                 var response = await client.GetFromJsonAsync<PaginatedResponse<FileRecordResponse>>(
                     $"/api/file-records?offset={Records.Count}&limit={PageSize}{BuildSortQueryString()}");
 
+                if (!IsCurrentListRequest(version)) return;
+
                 if (response is not null)
                 {
                     Records.AddRange(response.Items);
@@ -352,7 +389,8 @@ public partial class FileRecords : IAsyncDisposable
         }
         catch
         {
-            // Silently handle — user can scroll again to retry
+            // Shown below the list with a retry button; the scroll observer won't fire again on its own
+            if (IsCurrentListRequest(version)) HasLoadMoreError = true;
         }
         finally
         {
@@ -369,6 +407,8 @@ public partial class FileRecords : IAsyncDisposable
             return;
         }
 
+        var version = StartListRequest();
+        var term = SearchTerm.Trim();
         IsSearching = true;
         HasSearchError = false;
         _observerInitialized = false;
@@ -376,9 +416,11 @@ public partial class FileRecords : IAsyncDisposable
         try
         {
             var client = await ApiClient.CreateClientAsync();
-            var encoded = Uri.EscapeDataString(SearchTerm.Trim());
+            var encoded = Uri.EscapeDataString(term);
             var response = await client.GetFromJsonAsync<PaginatedResponse<FileRecordResponse>>(
                 $"/api/file-records/search?q={encoded}&offset=0&limit={PageSize}{BuildSortQueryString()}");
+
+            if (!IsCurrentListRequest(version)) return;
 
             if (response is not null)
             {
@@ -393,16 +435,17 @@ public partial class FileRecords : IAsyncDisposable
                 HasMore = false;
             }
 
-            SearchedTerm = SearchTerm.Trim();
+            // Use the term captured at submit time — the input may have changed while the request ran
+            SearchedTerm = term;
             IsSearchActive = true;
         }
         catch
         {
-            HasSearchError = true;
+            if (IsCurrentListRequest(version)) HasSearchError = true;
         }
         finally
         {
-            IsSearching = false;
+            if (IsCurrentListRequest(version)) IsSearching = false;
         }
     }
 
@@ -443,22 +486,28 @@ public partial class FileRecords : IAsyncDisposable
         if (DeleteTargetId is null) return;
 
         IsDeleting = true;
+        DeleteErrorName = null;
 
         try
         {
             var client = await ApiClient.CreateClientAsync();
             var response = await client.DeleteAsync($"/api/file-records/{DeleteTargetId}");
 
-            if (response.IsSuccessStatusCode)
+            // 404 means the record is already gone (e.g. deleted in another tab) — drop it from the list too
+            if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 Records = Records.Where(r => r.Id != DeleteTargetId).ToList();
                 TotalCount--;
                 if (IsSearchActive) SearchResultCount--;
             }
+            else
+            {
+                DeleteErrorName = DeleteTargetName;
+            }
         }
         catch
         {
-            // Silently handle errors
+            DeleteErrorName = DeleteTargetName;
         }
         finally
         {

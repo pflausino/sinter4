@@ -11,6 +11,11 @@ public class FirebaseTokenProvider : ITokenProvider
     private const int RefreshMaxRetries = 2;
     private const int RefreshRetryDelayMs = 2000;
 
+    // Matches FirebaseAuthStateProvider: renew tokens that expire within this window.
+    internal static readonly TimeSpan RefreshWindow = TimeSpan.FromMinutes(5);
+
+    // Serializes refreshes so parallel API calls in the same circuit don't each hit Firebase.
+    private readonly SemaphoreSlim _refreshLock = new(1, 1);
     private readonly HttpClient _httpClient;
     private readonly ITokenStorage _tokenStorage;
     private readonly string _apiKey;
@@ -73,17 +78,61 @@ public class FirebaseTokenProvider : ITokenProvider
         }
     }
 
+    /// <summary>
+    /// Returns the stored ID token, refreshing it first when it expires within <see cref="RefreshWindow"/>.
+    /// The auth state is only evaluated when the circuit starts, so a tab left open longer than the
+    /// token lifetime (1h) depends on this to keep API calls authenticated.
+    /// Returns null when the token is expired and cannot be refreshed.
+    /// </summary>
     public async Task<string?> GetTokenAsync()
+    {
+        var token = await ReadStoredIdTokenAsync();
+        if (token is null || !IsNearExpiry(token))
+        {
+            return token;
+        }
+
+        await _refreshLock.WaitAsync();
+        try
+        {
+            // Another call may have refreshed the token while this one waited for the lock
+            token = await ReadStoredIdTokenAsync();
+            if (token is null || !IsNearExpiry(token))
+            {
+                return token;
+            }
+
+            if (await RefreshTokenAsync())
+            {
+                return await ReadStoredIdTokenAsync();
+            }
+
+            _logger.LogInformation("ID token is near expiry and could not be refreshed");
+            return JwtExpiration.Read(token) > DateTimeOffset.UtcNow ? token : null;
+        }
+        finally
+        {
+            _refreshLock.Release();
+        }
+    }
+
+    private async Task<string?> ReadStoredIdTokenAsync()
     {
         try
         {
             var result = await _tokenStorage.GetAsync(IdTokenKey);
-            return result.Success ? result.Value : null;
+            return result.Success && !string.IsNullOrEmpty(result.Value) ? result.Value : null;
         }
         catch
         {
             return null;
         }
+    }
+
+    private static bool IsNearExpiry(string token)
+    {
+        var expiration = JwtExpiration.Read(token);
+        return expiration is not null && expiration.Value - DateTimeOffset.UtcNow <= RefreshWindow;
     }
 
     public async Task SignOutAsync()
