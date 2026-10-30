@@ -76,6 +76,51 @@ public class FileRecordSearchTests : IClassFixture<CustomWebApplicationFactory>
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+
+    [Fact]
+    public async Task DuplicatesEndpoint_EmptyName_Returns200EmptyArray()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/file-records/duplicates?name=%20");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var matches = await response.Content.ReadFromJsonAsync<List<FileRecordResponse>>(JsonOptions);
+        Assert.NotNull(matches);
+        Assert.Empty(matches);
+    }
+
+    [Fact]
+    public async Task DuplicatesEndpoint_NameLengthExceeds200_Returns400()
+    {
+        // Act
+        var response = await _client.GetAsync($"/api/file-records/duplicates?name={new string('a', 201)}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // --- Numeric terms (SQL itself is covered in tests/Integration) ---
+
+    [Theory]
+    [InlineData("2040", 2040L)]
+    [InlineData("007", 7L)]
+    [InlineData("99999999999", 99_999_999_999L)]
+    public void NumericSearchTerm_DigitsOnly_ReturnsNumber(string term, long expected)
+    {
+        Assert.Equal(expected, Api.Services.FileRecordService.NumericSearchTerm(term));
+    }
+
+    [Theory]
+    [InlineData("20a")]
+    [InlineData("-5")]
+    [InlineData("1.5")]
+    [InlineData("٣")] // non-ASCII digit
+    [InlineData("99999999999999999999")] // does not fit in a long
+    public void NumericSearchTerm_NotPlainDigits_ReturnsNull(string term)
+    {
+        Assert.Null(Api.Services.FileRecordService.NumericSearchTerm(term));
+    }
 }
 
 /// <summary>

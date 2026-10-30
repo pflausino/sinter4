@@ -41,6 +41,17 @@ public static class FileRecordEndpoints
             }
         });
 
+        group.MapGet("/duplicates", async (string? name, Guid? excludeId, IFileRecordService service) =>
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return Results.Ok(new List<FileRecordResponse>());
+
+            if (name.Length > 200)
+                return Results.BadRequest(new { error = "Name must not exceed 200 characters" });
+
+            return Results.Ok(await service.FindByNameAsync(name, excludeId));
+        });
+
         group.MapGet("/{id:guid}", async (Guid id, IFileRecordService service) =>
         {
             var record = await service.GetByIdAsync(id);

@@ -11,23 +11,90 @@ namespace Web.Components.Pages;
 
 public partial class FileRecordCreate
 {
-    private static readonly string[] FieldIds = ["name", "fileType", "client", "date", "fileNumber"];
+    internal const string FieldName = "name";
+    internal const string FieldFileType = "fileType";
+    internal const string FieldClient = "client";
+    internal const string FieldDate = "date";
+    internal const string FieldFlopDiskNumber = "flopDiskNumber";
+    internal const string FieldFileNumber = "fileNumber";
+
+    // Enter moves through the fields in this (on-screen) order; locked fields are skipped
+    private static readonly string[] FieldIds =
+        [FieldName, FieldFileType, FieldClient, FieldDate, FieldFlopDiskNumber, FieldFileNumber];
 
     [Inject] private AuthenticatedHttpClient ApiClient { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
+    // Search term of the list this page was opened from, so going back returns to it
+    [SupplyParameterFromQuery(Name = "q")]
+    public string? ReturnQuery { get; set; }
+
+    private string ListUrl =>
+        string.IsNullOrWhiteSpace(ReturnQuery) ? "/file-records" : $"/file-records?q={Uri.EscapeDataString(ReturnQuery)}";
+
     private FileRecordCreateModel Model { get; set; } = new();
     private bool IsSubmitting { get; set; }
     private string? ErrorMessage { get; set; }
     private string? SuccessMessage { get; set; }
-    private bool LockFileNumber { get; set; }
+
+    // Fields that keep their value after saving, for entering many records from the same disk or client
+    private readonly HashSet<string> _lockedFields = [];
+
+    // Records that already have the typed name; shown as a warning, never blocks saving
+    private List<FileRecordResponse> DuplicateMatches { get; set; } = [];
+    private int _duplicateCheckVersion;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await JS.InvokeVoidAsync("FormNavigation.initialize", "#create-form", FieldIds);
+            await InitializeFormNavigation();
+        }
+    }
+
+    private bool IsLocked(string fieldId) => _lockedFields.Contains(fieldId);
+
+    private async Task ToggleLock(string fieldId)
+    {
+        if (!_lockedFields.Remove(fieldId))
+        {
+            _lockedFields.Add(fieldId);
+        }
+
+        await InitializeFormNavigation();
+    }
+
+    private Task InitializeFormNavigation() =>
+        JS.InvokeVoidAsync("FormNavigation.initialize", "#create-form", FieldIds.Where(id => !IsLocked(id)).ToArray()).AsTask();
+
+    private async Task CheckDuplicateNameAsync()
+    {
+        var version = ++_duplicateCheckVersion;
+        var name = Model.Name.Trim();
+        if (name.Length == 0)
+        {
+            DuplicateMatches = [];
+            return;
+        }
+
+        List<FileRecordResponse>? matches;
+        try
+        {
+            var client = await ApiClient.CreateClientAsync();
+            matches = await client.GetFromJsonAsync<List<FileRecordResponse>>(
+                $"/api/file-records/duplicates?name={Uri.EscapeDataString(name)}");
+        }
+        catch
+        {
+            // The warning is only a hint; if the check fails, saving works as before
+            matches = null;
+        }
+
+        // Ignore the answer if the name changed (or the form was saved) while it was on its way
+        if (version == _duplicateCheckVersion)
+        {
+            DuplicateMatches = matches ?? [];
         }
     }
 
@@ -59,8 +126,8 @@ public partial class FileRecordCreate
                 ResetForm();
                 StateHasChanged();
                 await Task.Yield();
-                await JS.InvokeVoidAsync("FormNavigation.initialize", "#create-form", FieldIds);
-                await JS.InvokeVoidAsync("FormNavigation.focusField", "name");
+                await InitializeFormNavigation();
+                await JS.InvokeVoidAsync("FormNavigation.focusField", FieldName);
             }
             else
             {
@@ -80,17 +147,17 @@ public partial class FileRecordCreate
 
     private void ResetForm()
     {
-        var preservedFileNumber = LockFileNumber ? Model.FileNumber : (long?)null;
-        Model = new FileRecordCreateModel();
-        if (preservedFileNumber is not null)
-        {
-            Model.FileNumber = preservedFileNumber.Value;
-        }
-    }
+        var previous = Model;
+        var fresh = new FileRecordCreateModel();
+        if (IsLocked(FieldFileType)) fresh.FileType = previous.FileType;
+        if (IsLocked(FieldClient)) fresh.Client = previous.Client;
+        if (IsLocked(FieldDate)) fresh.Date = previous.Date;
+        if (IsLocked(FieldFlopDiskNumber)) fresh.FlopDiskNumber = previous.FlopDiskNumber;
+        if (IsLocked(FieldFileNumber)) fresh.FileNumber = previous.FileNumber;
+        Model = fresh;
 
-    private void ToggleLockFileNumber()
-    {
-        LockFileNumber = !LockFileNumber;
+        DuplicateMatches = [];
+        _duplicateCheckVersion++;
     }
 
     public sealed class FileRecordCreateModel

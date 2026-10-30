@@ -58,3 +58,11 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* Search term highlighted in the file records list (rendered from code, so not in scoped CSS) */
+mark.search-match {
+    background-color: #fff1a8;
+    color: inherit;
+    padding: 0;
+    border-radius: 2px;
+}

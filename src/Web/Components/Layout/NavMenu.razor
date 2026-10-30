@@ -24,14 +24,13 @@
                 <span class="bi bi-file-earmark-fill-nav-menu" aria-hidden="true"></span> Arquivos
             </NavLink>
         </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="health">
-                <span class="bi bi-heart-pulse-fill-nav-menu" aria-hidden="true"></span> Health
-            </NavLink>
-        </div>
     </nav>
 
     <div class="nav-bottom">
+        @* Technical page: kept reachable but out of the main menu *@
+        <div class="nav-item px-3">
+            <NavLink class="nav-link-subtle" href="health">Status do sistema</NavLink>
+        </div>
         <div class="nav-item px-3">
             <button class="nav-link logout-btn" @onclick="HandleLogoutAsync" disabled="@_isLoggingOut" aria-label="Sair">
                 <span class="bi bi-box-arrow-left-nav-menu" aria-hidden="true"></span>

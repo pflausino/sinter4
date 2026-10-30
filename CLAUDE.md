@@ -43,6 +43,7 @@ Browser ──SignalR──> Web (Blazor Server) ──HTTP + Bearer JWT──> 
 | GET | `/api/me` | uid/email do token |
 | GET | `/api/file-records?offset&limit&sortBy&sortDir` | `limit` 1–100 (padrão 50) |
 | GET | `/api/file-records/search?q&offset&limit&sortBy&sortDir` | `q` ≤ 200 caracteres |
+| GET | `/api/file-records/duplicates?name&excludeId` | até 5 fichas com o mesmo nome (aviso no cadastro) |
 | GET/PUT/DELETE | `/api/file-records/{id:guid}` | |
 | POST | `/api/file-records` | |
 
@@ -51,7 +52,8 @@ Respostas de lista usam `PaginatedResponse<T>(Items, TotalCount, HasMore)`. A UI
 ## Armadilhas
 
 - **Busca é SQL cru** (`FileRecordService.BuildSearchWhereClause`): cada termo vira
-  `unaccent(lower(col)) ILIKE '%termo%'` em `name OR client`, e os termos são combinados com AND. Além disso,
+  `unaccent(lower(col)) ILIKE '%termo%'` em `name OR client` (termo só de dígitos também compara igual com
+  `file_number` e `flop_disk_number`), e os termos são combinados com AND. Além disso,
   a consulta inteira sem espaços e pontuação é comparada com `name`/`client` limpos do mesmo jeito
   (`regexp_replace(..., '[^[:alnum:]]', '', 'g')`), para "HORTODENTE" achar "Horto Dente". Depende da
   extensão `unaccent` (migration `AddUnaccentExtension`). Sempre use parâmetros Npgsql, nunca concatene
@@ -60,6 +62,8 @@ Respostas de lista usam `PaginatedResponse<T>(Items, TotalCount, HasMore)`. A UI
   `StartListRequest()` e descarta a resposta se `IsCurrentListRequest(version)` for falso. Mantenha esse
   padrão em novas cargas, senão respostas lentas sobrescrevem resultados novos. O termo da busca fica na URL
   (`/file-records?q=...`) e as páginas de edição recebem `?q=` para voltar à mesma busca.
+- **`FileNumber` não é único:** é o número da caixa/lote e se repete em centenas de fichas (por isso o
+  cadeado no cadastro). Duplicata, para o aviso do cadastro, é mesmo nome ignorando caixa, acento e espaços.
 - **A página declara `lang="pt-BR" translate="no"`** (`App.razor`). Tradução automática do navegador quebra a
   renderização do Blazor (a tela mostra conteúdo antigo). Não remova.
 - **Ordenação tem whitelist.** Para tornar uma coluna ordenável, atualize os três pontos juntos:

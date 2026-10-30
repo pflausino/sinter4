@@ -105,6 +105,31 @@ public class FileRecordService : IFileRecordService
         return true;
     }
 
+    /// <summary>
+    /// Records whose name equals <paramref name="name"/> ignoring case, accents and surrounding
+    /// spaces. Used to warn about duplicates before saving; at most 5 are returned.
+    /// </summary>
+    public async Task<List<FileRecordResponse>> FindByNameAsync(string name, Guid? excludeId = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return [];
+
+        var sql = "SELECT * FROM file_records WHERE unaccent(lower(btrim(name))) = unaccent(lower(btrim(@name)))";
+        var parameters = new List<object> { new NpgsqlParameter("@name", name) };
+        if (excludeId is { } id)
+        {
+            sql += " AND id <> @excludeId";
+            parameters.Add(new NpgsqlParameter("@excludeId", id));
+        }
+        sql += " ORDER BY date DESC, id LIMIT 5";
+
+        var records = await _dbContext.FileRecords
+            .FromSqlRaw(sql, parameters.ToArray())
+            .ToListAsync();
+
+        return records.Select(ToResponse).ToList();
+    }
+
     public async Task<List<FileRecordResponse>> SearchAsync(string searchTerm)
     {
         var terms = searchTerm.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -261,9 +286,10 @@ public class FileRecordService : IFileRecordService
     }
 
     /// <summary>
-    /// A record matches when every term is found in name or client, OR when the whole query with
-    /// spaces and punctuation removed is found in name or client stripped the same way. The second
-    /// form makes "HORTODENTE" find "Horto Dente" (the per-term form already covers the reverse).
+    /// A record matches when every term is found in name or client (a numeric term also matches the
+    /// file or diskette number exactly), OR when the whole query with spaces and punctuation removed
+    /// is found in name or client stripped the same way. The second form makes "HORTODENTE" find
+    /// "Horto Dente" (the per-term form already covers the reverse).
     /// </summary>
     private static string BuildSearchWhereClause(string[] terms)
     {
@@ -271,7 +297,12 @@ public class FileRecordService : IFileRecordService
         for (int i = 0; i < terms.Length; i++)
         {
             if (i > 0) conditions.Append(" AND ");
-            conditions.Append($"(unaccent(lower(name)) ILIKE unaccent(lower(@p{i})) OR unaccent(lower(client)) ILIKE unaccent(lower(@p{i})))");
+            conditions.Append($"(unaccent(lower(name)) ILIKE unaccent(lower(@p{i})) OR unaccent(lower(client)) ILIKE unaccent(lower(@p{i}))");
+            if (NumericSearchTerm(terms[i]) is not null)
+            {
+                conditions.Append($" OR file_number = @n{i} OR flop_disk_number = @n{i}");
+            }
+            conditions.Append(')');
         }
         conditions.Append(')');
 
@@ -291,6 +322,10 @@ public class FileRecordService : IFileRecordService
         for (int i = 0; i < terms.Length; i++)
         {
             parameters.Add(new NpgsqlParameter($"@p{i}", $"%{terms[i]}%"));
+            if (NumericSearchTerm(terms[i]) is { } number)
+            {
+                parameters.Add(new NpgsqlParameter($"@n{i}", number));
+            }
         }
 
         var compact = CompactSearchTerm(terms);
@@ -310,6 +345,12 @@ public class FileRecordService : IFileRecordService
         var compact = new string(string.Concat(terms).Where(char.IsLetterOrDigit).ToArray());
         return compact.Length > 0 ? compact : null;
     }
+
+    /// <summary>
+    /// The term as a number when it is made only of digits (e.g. "2040"), otherwise null.
+    /// </summary>
+    internal static long? NumericSearchTerm(string term) =>
+        term.All(char.IsAsciiDigit) && long.TryParse(term, out var number) ? number : null;
 
     internal static int ComputeScore(FileRecord record, string[] terms)
     {
