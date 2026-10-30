@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
@@ -76,6 +77,8 @@ public partial class FileRecords : IAsyncDisposable
         new("actions", "Ações", DefaultVisible: true),
     ];
 
+    private const string ColumnVisibilityStorageKey = "sinter.fileRecords.columns";
+
     private Dictionary<string, bool> ColumnVisibility { get; set; } = new();
     private bool IsColumnSelectorOpen { get; set; }
     private ElementReference ColumnSelectorRef { get; set; }
@@ -88,7 +91,7 @@ public partial class FileRecords : IAsyncDisposable
         ColumnVisibility = AllColumns.ToDictionary(c => c.Id, c => c.DefaultVisible);
     }
 
-    private void ToggleColumnVisibility(string columnId)
+    private async Task ToggleColumnVisibility(string columnId)
     {
         if (!ColumnVisibility.ContainsKey(columnId)) return;
 
@@ -96,6 +99,45 @@ public partial class FileRecords : IAsyncDisposable
         if (ColumnVisibility[columnId] && VisibleColumnCount() <= 1) return;
 
         ColumnVisibility[columnId] = !ColumnVisibility[columnId];
+
+        try
+        {
+            await JS.InvokeVoidAsync("ColumnSelector.saveVisibility", ColumnVisibilityStorageKey,
+                JsonSerializer.Serialize(ColumnVisibility));
+        }
+        catch (JSException)
+        {
+            // Not saved; the choice still applies until the page is reloaded
+        }
+    }
+
+    /// <summary>
+    /// Applies the column choice saved in the browser. Unknown ids are ignored, columns added since
+    /// keep their default, and a saved choice that would hide every column is discarded.
+    /// </summary>
+    private async Task RestoreColumnVisibilityAsync()
+    {
+        try
+        {
+            var saved = await JS.InvokeAsync<string?>("ColumnSelector.loadVisibility", ColumnVisibilityStorageKey);
+            if (string.IsNullOrEmpty(saved)) return;
+
+            var restored = AllColumns.ToDictionary(c => c.Id, c => c.DefaultVisible);
+            foreach (var (id, visible) in JsonSerializer.Deserialize<Dictionary<string, bool>>(saved) ?? [])
+            {
+                if (restored.ContainsKey(id)) restored[id] = visible;
+            }
+
+            if (restored.Values.Any(v => v))
+            {
+                ColumnVisibility = restored;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex) when (ex is JSException or JsonException)
+        {
+            // Keep the defaults
+        }
     }
 
     private int VisibleColumnCount() => ColumnVisibility.Count(kv => kv.Value);
@@ -316,6 +358,28 @@ public partial class FileRecords : IAsyncDisposable
     }
 
     /// <summary>
+    /// Renders <paramref name="text"/> with the parts that match the active search wrapped in &lt;mark&gt;.
+    /// </summary>
+    private RenderFragment Highlight(string text) => builder =>
+    {
+        var query = IsSearchActive ? SearchedTerm : null;
+        foreach (var (part, isMatch) in SearchHighlight.Split(text, query))
+        {
+            if (isMatch)
+            {
+                builder.OpenElement(0, "mark");
+                builder.AddAttribute(1, "class", "search-match");
+                builder.AddContent(2, part);
+                builder.CloseElement();
+            }
+            else
+            {
+                builder.AddContent(3, part);
+            }
+        }
+    };
+
+    /// <summary>
     /// Query string appended to edit links so the edit page can return to the same search.
     /// </summary>
     private string ReturnQueryString =>
@@ -323,6 +387,11 @@ public partial class FileRecords : IAsyncDisposable
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender)
+        {
+            await RestoreColumnVisibilityAsync();
+        }
+
         if (!_observerInitialized && !IsLoading && !HasError && Records.Count > 0 && HasMore)
         {
             await InitializeInfiniteScroll();

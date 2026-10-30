@@ -370,6 +370,91 @@ public class FileRecordSearchIntegrationTests : IClassFixture<PostgresWebApplica
     }
 
     [Fact]
+    public async Task Search_NumericTerm_FindsRecordByFileNumber()
+    {
+        var fileNumber = Random.Shared.NextInt64(10_000_000_000, 99_999_999_999);
+        await AddRecordAsync("Folheto", "Cliente", fileNumber: fileNumber);
+
+        var paginated = await SearchAsync(fileNumber.ToString());
+
+        Assert.Single(paginated.Items, r => r.FileNumber == fileNumber);
+        Assert.Equal(1, paginated.TotalCount);
+    }
+
+    [Fact]
+    public async Task Search_NumericTerm_FindsRecordByFlopDiskNumber()
+    {
+        var diskNumber = Random.Shared.Next(1_000_000_000, int.MaxValue);
+        await AddRecordAsync("Folheto", "Cliente", flopDiskNumber: diskNumber);
+
+        var paginated = await SearchAsync(diskNumber.ToString());
+
+        Assert.Single(paginated.Items, r => r.FlopDiskNumber == diskNumber);
+        Assert.Equal(1, paginated.TotalCount);
+    }
+
+    [Fact]
+    public async Task Search_NumericAndTextTerms_MustAllMatch()
+    {
+        var fileNumber = Random.Shared.NextInt64(10_000_000_000, 99_999_999_999);
+        var marker = $"m{Guid.NewGuid():N}";
+        await AddRecordAsync($"Folheto {marker}", "Cliente", fileNumber: fileNumber);
+        await AddRecordAsync("Cartão", "Cliente", fileNumber: fileNumber);
+
+        var paginated = await SearchAsync($"{fileNumber} {marker}");
+
+        Assert.Single(paginated.Items);
+        Assert.Equal($"Folheto {marker}", paginated.Items[0].Name);
+    }
+
+    [Fact]
+    public async Task Duplicates_MatchNameIgnoringCaseAccentsAndSurroundingSpaces()
+    {
+        var marker = $"m{Guid.NewGuid():N}";
+        var existingId = await AddRecordAsync($"Folheto Promoção {marker}", "Cliente");
+        await AddRecordAsync($"Folheto Promoção {marker} 2", "Cliente");
+
+        var query = Uri.EscapeDataString($"  folheto PROMOCAO {marker} ");
+        var matches = await _client.GetFromJsonAsync<List<FileRecordResponse>>($"/api/file-records/duplicates?name={query}");
+
+        Assert.NotNull(matches);
+        Assert.Single(matches, r => r.Id == existingId);
+
+        var excluded = await _client.GetFromJsonAsync<List<FileRecordResponse>>(
+            $"/api/file-records/duplicates?name={query}&excludeId={existingId}");
+        Assert.NotNull(excluded);
+        Assert.Empty(excluded);
+    }
+
+    private async Task<Guid> AddRecordAsync(string name, string client, long fileNumber = 1, int? flopDiskNumber = null)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var record = new FileRecord
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            FileType = FileType.PDF,
+            Client = client,
+            FileNumber = fileNumber,
+            FlopDiskNumber = flopDiskNumber,
+            Date = DateTime.SpecifyKind(new DateTime(2026, 6, 17), DateTimeKind.Utc)
+        };
+        dbContext.FileRecords.Add(record);
+        await dbContext.SaveChangesAsync();
+        return record.Id;
+    }
+
+    private async Task<PaginatedResponse<FileRecordResponse>> SearchAsync(string q)
+    {
+        var response = await _client.GetAsync($"/api/file-records/search?q={Uri.EscapeDataString(q)}");
+        response.EnsureSuccessStatusCode();
+        var paginated = await response.Content.ReadFromJsonAsync<PaginatedResponse<FileRecordResponse>>();
+        Assert.NotNull(paginated);
+        return paginated;
+    }
+
+    [Fact]
     public async Task Search_Unauthenticated_Returns401()
     {
         // Create a client without the test auth handler

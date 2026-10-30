@@ -71,7 +71,7 @@
             </div>
         }
     </div>
-    <a href="/file-records/new" class="btn btn-primary btn-new" aria-label="Criar nova ficha de arquivo" tabindex="0">
+    <a href="@($"/file-records/new{ReturnQueryString}")" class="btn btn-primary btn-new" aria-label="Criar nova ficha de arquivo" tabindex="0">
         <span class="btn-icon" aria-hidden="true">+</span>
         <span>Nova Ficha</span>
     </a>
@@ -227,10 +227,10 @@ else
                 @foreach (var record in Records)
                 {
                     <tr>
-                        @if (IsColumnVisible("name")) { <td class="cell-name">@record.Name</td> }
+                        @if (IsColumnVisible("name")) { <td class="cell-name">@Highlight(record.Name)</td> }
                         @if (IsColumnVisible("type")) { <td><span class="badge-type badge-@record.FileType.ToString().ToLowerInvariant()">@record.FileType</span></td> }
                         @if (IsColumnVisible("fileNumber")) { <td>@record.FileNumber</td> }
-                        @if (IsColumnVisible("client")) { <td>@record.Client</td> }
+                        @if (IsColumnVisible("client")) { <td>@Highlight(record.Client)</td> }
                         @if (IsColumnVisible("date")) { <td class="cell-date">@record.Date.ToString("dd/MM/yyyy")</td> }
                         @if (IsColumnVisible("flopDiskNumber")) { <td class="col-disk">@(record.FlopDiskNumber?.ToString() ?? "—")</td> }
                         @if (IsColumnVisible("actions"))
@@ -281,7 +281,7 @@ else
                 <div class="card-header">
                     @if (IsColumnVisible("name"))
                     {
-                        <span class="card-name">@record.Name</span>
+                        <span class="card-name">@Highlight(record.Name)</span>
                     }
                     @if (IsColumnVisible("type"))
                     {
@@ -293,7 +293,7 @@ else
                     {
                         <div class="card-detail">
                             <span class="detail-label">Cliente</span>
-                            <span class="detail-value">@record.Client</span>
+                            <span class="detail-value">@Highlight(record.Client)</span>
                         </div>
                     }
                     @if (IsColumnVisible("fileNumber"))

@@ -21,5 +21,14 @@ window.ColumnSelector = {
             document.removeEventListener('mousedown', this._listener);
             this._listener = null;
         }
+    },
+
+    // Storage can be unavailable (private mode, blocked site data); callers fall back to defaults
+    loadVisibility: function (key) {
+        try { return localStorage.getItem(key); } catch { return null; }
+    },
+
+    saveVisibility: function (key, value) {
+        try { localStorage.setItem(key, value); } catch { }
     }
 };

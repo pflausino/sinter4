@@ -5,7 +5,7 @@
 <PageTitle>Nova Ficha de Arquivo</PageTitle>
 
 <div class="page-header">
-    <a href="/file-records" class="back-link" aria-label="Voltar para lista de fichas">
+    <a href="@ListUrl" class="back-link" aria-label="Voltar para lista de fichas">
         <span aria-hidden="true">←</span> Fichas de Arquivo
     </a>
     <h1>Nova Ficha</h1>
@@ -16,39 +16,74 @@
     <EditForm Model="Model" OnValidSubmit="HandleValidSubmit" FormName="CreateFileRecord" id="create-form">
         <DataAnnotationsValidator />
 
+        <p class="lock-hint">Use o cadeado 🔓 para manter o valor de um campo nas próximas fichas.</p>
+
         <div class="form-grid">
             <div class="field full-width">
                 <label for="name" class="field-label">Nome <span class="required" aria-hidden="true">*</span></label>
-                <InputText id="name" @bind-Value="Model.Name" class="form-control" placeholder="Ex: Logo Empresa XYZ" />
+                <InputText id="name" @bind-Value="Model.Name" @bind-Value:after="CheckDuplicateNameAsync" class="form-control" placeholder="Ex: Logo Empresa XYZ" />
                 <ValidationMessage For="() => Model.Name" />
+                @if (DuplicateMatches.Count > 0)
+                {
+                    <div class="duplicate-warning" role="status" aria-live="polite">
+                        <p class="duplicate-title">
+                            <span aria-hidden="true">⚠️</span>
+                            @(DuplicateMatches.Count == 1 ? "Já existe uma ficha com este nome:" : $"Já existem {DuplicateMatches.Count} fichas com este nome:")
+                        </p>
+                        <ul>
+                            @foreach (var match in DuplicateMatches)
+                            {
+                                <li>
+                                    <strong>@match.Name</strong>
+                                    · arquivo @match.FileNumber
+                                    · @(string.IsNullOrWhiteSpace(match.Client) ? "sem cliente" : match.Client)
+                                    · @match.Date.ToString("dd/MM/yyyy")
+                                </li>
+                            }
+                        </ul>
+                        <p class="duplicate-hint">Se for outro arquivo, pode salvar normalmente.</p>
+                    </div>
+                }
             </div>
 
             <div class="field">
                 <label for="fileType" class="field-label">Tipo de Arquivo <span class="required" aria-hidden="true">*</span></label>
-                <InputSelect id="fileType" @bind-Value="Model.FileType" class="form-select">
-                    @foreach (var value in Enum.GetValues<Domain.Enums.FileType>())
-                    {
-                        <option value="@value">@value</option>
-                    }
-                </InputSelect>
+                <div class="field-with-lock">
+                    <InputSelect id="fileType" @bind-Value="Model.FileType" class="form-select">
+                        @foreach (var value in Enum.GetValues<Domain.Enums.FileType>())
+                        {
+                            <option value="@value">@value</option>
+                        }
+                    </InputSelect>
+                    <FieldLock Locked="@IsLocked(FieldFileType)" Label="tipo de arquivo" OnToggle="() => ToggleLock(FieldFileType)" />
+                </div>
                 <ValidationMessage For="() => Model.FileType" />
             </div>
 
             <div class="field">
                 <label for="client" class="field-label">Cliente <span class="required" aria-hidden="true">*</span></label>
-                <InputText id="client" @bind-Value="Model.Client" class="form-control" placeholder="Nome do cliente" />
+                <div class="field-with-lock">
+                    <InputText id="client" @bind-Value="Model.Client" class="form-control" placeholder="Nome do cliente" />
+                    <FieldLock Locked="@IsLocked(FieldClient)" Label="cliente" OnToggle="() => ToggleLock(FieldClient)" />
+                </div>
                 <ValidationMessage For="() => Model.Client" />
             </div>
 
             <div class="field">
                 <label for="date" class="field-label">Data <span class="required" aria-hidden="true">*</span></label>
-                <InputDate id="date" @bind-Value="Model.Date" class="form-control" />
+                <div class="field-with-lock">
+                    <InputDate id="date" @bind-Value="Model.Date" class="form-control" />
+                    <FieldLock Locked="@IsLocked(FieldDate)" Label="data" OnToggle="() => ToggleLock(FieldDate)" />
+                </div>
                 <ValidationMessage For="() => Model.Date" />
             </div>
 
             <div class="field">
                 <label for="flopDiskNumber" class="field-label">Número do Disquete</label>
-                <InputNumber id="flopDiskNumber" @bind-Value="Model.FlopDiskNumber" class="form-control" placeholder="Opcional" />
+                <div class="field-with-lock">
+                    <InputNumber id="flopDiskNumber" @bind-Value="Model.FlopDiskNumber" class="form-control" placeholder="Opcional" />
+                    <FieldLock Locked="@IsLocked(FieldFlopDiskNumber)" Label="número do disquete" OnToggle="() => ToggleLock(FieldFlopDiskNumber)" />
+                </div>
                 <ValidationMessage For="() => Model.FlopDiskNumber" />
             </div>
 
@@ -56,13 +91,7 @@
                 <label for="fileNumber" class="field-label">Número do Arquivo <span class="required" aria-hidden="true">*</span></label>
                 <div class="field-with-lock">
                     <InputNumber id="fileNumber" @bind-Value="Model.FileNumber" class="form-control" placeholder="Ex: 1179" min="0" />
-                    <button type="button"
-                            class="btn-lock @(LockFileNumber ? "locked" : "")"
-                            title="@(LockFileNumber ? "Desbloquear: limpar após salvar" : "Bloquear: manter valor após salvar")"
-                            aria-label="@(LockFileNumber ? "Desbloquear número do arquivo" : "Bloquear número do arquivo")"
-                            @onclick="ToggleLockFileNumber">
-                        @(LockFileNumber ? "🔒" : "🔓")
-                    </button>
+                    <FieldLock Locked="@IsLocked(FieldFileNumber)" Label="número do arquivo" OnToggle="() => ToggleLock(FieldFileNumber)" />
                 </div>
                 <ValidationMessage For="() => Model.FileNumber" />
             </div>
@@ -83,7 +112,7 @@
         }
 
         <div class="form-actions">
-            <a href="/file-records" class="btn btn-outline-secondary">Cancelar</a>
+            <a href="@ListUrl" class="btn btn-outline-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary btn-submit" disabled="@IsSubmitting">
                 @if (IsSubmitting)
                 {

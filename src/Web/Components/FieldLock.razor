@@ -1,0 +1,18 @@
+@* Padlock next to a form field: when locked, the field keeps its value after saving *@
+<button type="button"
+        class="btn-lock @(Locked ? "locked" : "")"
+        title="@(Locked ? "Desbloquear: limpar após salvar" : "Bloquear: manter valor após salvar")"
+        aria-label="@(Locked ? $"Desbloquear {Label}" : $"Bloquear {Label}")"
+        aria-pressed="@Locked.ToString().ToLowerInvariant()"
+        @onclick="OnToggle">
+    @(Locked ? "🔒" : "🔓")
+</button>
+
+@code {
+    [Parameter, EditorRequired] public bool Locked { get; set; }
+
+    /// <summary>Field name used in the accessible label, e.g. "número do arquivo".</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    [Parameter] public EventCallback OnToggle { get; set; }
+}

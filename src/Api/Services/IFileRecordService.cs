@@ -11,5 +11,6 @@ public interface IFileRecordService
     Task<FileRecordResponse?> UpdateAsync(Guid id, UpdateFileRecordRequest request);
     Task<bool> DeleteAsync(Guid id);
     Task<List<FileRecordResponse>> SearchAsync(string searchTerm);
+    Task<List<FileRecordResponse>> FindByNameAsync(string name, Guid? excludeId = null);
     Task<PaginatedResponse<FileRecordResponse>> SearchPagedAsync(string searchTerm, int offset, int limit, string? sortBy = null, string? sortDir = null);
 }
