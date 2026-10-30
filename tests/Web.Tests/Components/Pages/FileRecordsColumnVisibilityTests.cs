@@ -2,8 +2,10 @@ using System.Net;
 using System.Net.Http.Json;
 using Bunit;
 using Domain.Enums;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Shared.Dtos;
 using Web.Components.Pages;
@@ -36,7 +38,10 @@ public class FileRecordsColumnVisibilityTests : BunitContext
         Services.AddSingleton(sp =>
             new AuthenticatedHttpClient(
                 sp.GetRequiredService<IHttpClientFactory>(),
-                sp.GetRequiredService<ITokenProvider>()));
+                sp.GetRequiredService<ITokenProvider>(),
+                sp.GetRequiredService<AuthenticationStateProvider>(),
+                sp.GetRequiredService<NavigationManager>(),
+                NullLogger<AuthenticatedHttpClient>.Instance));
 
         // Add fake authorization services for bUnit
         Services.AddAuthorizationCore();

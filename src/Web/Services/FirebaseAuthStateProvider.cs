@@ -178,7 +178,7 @@ public class FirebaseAuthStateProvider : AuthenticationStateProvider
         }
 
         var payload = parts[1];
-        var jsonBytes = ParseBase64WithoutPadding(payload);
+        var jsonBytes = JwtExpiration.DecodeBase64Url(payload);
         if (jsonBytes is null)
         {
             return null;
@@ -234,28 +234,4 @@ public class FirebaseAuthStateProvider : AuthenticationStateProvider
         "name" => ClaimTypes.Name,
         _ => jwtClaimType
     };
-
-    private static byte[]? ParseBase64WithoutPadding(string base64)
-    {
-        try
-        {
-            // Replace URL-safe characters
-            var output = base64.Replace('-', '+').Replace('_', '/');
-
-            // Add padding if necessary
-            switch (output.Length % 4)
-            {
-                case 2: output += "=="; break;
-                case 3: output += "="; break;
-                case 0: break;
-                default: return null;
-            }
-
-            return Convert.FromBase64String(output);
-        }
-        catch
-        {
-            return null;
-        }
-    }
 }

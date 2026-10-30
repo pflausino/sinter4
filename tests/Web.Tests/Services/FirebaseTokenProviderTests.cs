@@ -41,6 +41,13 @@ public class FirebaseTokenProviderTests
         return new FirebaseTokenProvider(_httpClientFactory, _tokenStorage, _configuration, _logger);
     }
 
+    private FirebaseTokenProvider CreateProvider(HttpMessageHandler handler, ITokenStorage tokenStorage)
+    {
+        var httpClient = new HttpClient(handler);
+        _httpClientFactory.CreateClient("FirebaseAuth").Returns(httpClient);
+        return new FirebaseTokenProvider(_httpClientFactory, tokenStorage, _configuration, _logger);
+    }
+
     #region Sign-In Success (Requirement 3.1)
 
     [Fact]
@@ -400,7 +407,123 @@ public class FirebaseTokenProviderTests
 
     #endregion
 
+    #region Proactive Refresh in GetTokenAsync
+
+    [Fact]
+    public async Task GetTokenAsync_TokenFarFromExpiry_ReturnsStoredTokenWithoutRefresh()
+    {
+        // Arrange
+        var storedToken = CreateJwt(DateTimeOffset.UtcNow.AddMinutes(30));
+        var storage = new InMemoryTokenStorage(storedToken, "refresh-token");
+        var trackingHandler = new RequestTrackingHttpMessageHandler([(HttpStatusCode.OK, "{}")]);
+        var provider = CreateProvider(trackingHandler, storage);
+
+        // Act
+        var token = await provider.GetTokenAsync();
+
+        // Assert
+        Assert.Equal(storedToken, token);
+        Assert.Equal(0, trackingHandler.RequestCount);
+    }
+
+    [Fact]
+    public async Task GetTokenAsync_TokenWithinRefreshWindow_RefreshesAndReturnsNewToken()
+    {
+        // Arrange
+        var newToken = CreateJwt(DateTimeOffset.UtcNow.AddHours(1));
+        var storage = new InMemoryTokenStorage(CreateJwt(DateTimeOffset.UtcNow.AddMinutes(2)), "refresh-token");
+        var handler = new FakeHttpMessageHandler(HttpStatusCode.OK,
+            JsonSerializer.Serialize(new { id_token = newToken, refresh_token = "new-refresh-token", expires_in = "3600" }));
+        var provider = CreateProvider(handler, storage);
+
+        // Act
+        var token = await provider.GetTokenAsync();
+
+        // Assert
+        Assert.Equal(newToken, token);
+        Assert.Equal("new-refresh-token", storage.Values["firebase_refresh_token"]);
+    }
+
+    [Fact]
+    public async Task GetTokenAsync_ExpiredTokenAndRefreshImpossible_ReturnsNull()
+    {
+        // Arrange - expired ID token and no refresh token stored
+        var storage = new InMemoryTokenStorage(CreateJwt(DateTimeOffset.UtcNow.AddMinutes(-10)), refreshToken: null);
+        var provider = CreateProvider(new FakeHttpMessageHandler(HttpStatusCode.OK, "{}"), storage);
+
+        // Act
+        var token = await provider.GetTokenAsync();
+
+        // Assert
+        Assert.Null(token);
+    }
+
+    [Fact]
+    public async Task GetTokenAsync_StillValidTokenAndRefreshImpossible_ReturnsCurrentToken()
+    {
+        // Arrange - token expires in 2 minutes, refresh cannot happen
+        var storedToken = CreateJwt(DateTimeOffset.UtcNow.AddMinutes(2));
+        var storage = new InMemoryTokenStorage(storedToken, refreshToken: null);
+        var provider = CreateProvider(new FakeHttpMessageHandler(HttpStatusCode.OK, "{}"), storage);
+
+        // Act
+        var token = await provider.GetTokenAsync();
+
+        // Assert
+        Assert.Equal(storedToken, token);
+    }
+
+    [Fact]
+    public async Task GetTokenAsync_NonJwtToken_ReturnsStoredTokenWithoutRefresh()
+    {
+        // Arrange
+        var storage = new InMemoryTokenStorage("opaque-token", "refresh-token");
+        var trackingHandler = new RequestTrackingHttpMessageHandler([(HttpStatusCode.OK, "{}")]);
+        var provider = CreateProvider(trackingHandler, storage);
+
+        // Act
+        var token = await provider.GetTokenAsync();
+
+        // Assert
+        Assert.Equal("opaque-token", token);
+        Assert.Equal(0, trackingHandler.RequestCount);
+    }
+
+    [Fact]
+    public async Task GetTokenAsync_ConcurrentCallsWithExpiredToken_RefreshesOnce()
+    {
+        // Arrange
+        var newToken = CreateJwt(DateTimeOffset.UtcNow.AddHours(1));
+        var storage = new InMemoryTokenStorage(CreateJwt(DateTimeOffset.UtcNow.AddMinutes(-1)), "refresh-token");
+        var trackingHandler = new RequestTrackingHttpMessageHandler(
+            [(HttpStatusCode.OK, JsonSerializer.Serialize(new { id_token = newToken, refresh_token = "new-refresh-token", expires_in = "3600" }))]);
+        var provider = CreateProvider(trackingHandler, storage);
+
+        // Act
+        var tokens = await Task.WhenAll(Enumerable.Range(0, 5).Select(_ => provider.GetTokenAsync()));
+
+        // Assert
+        Assert.All(tokens, t => Assert.Equal(newToken, t));
+        Assert.Equal(1, trackingHandler.RequestCount);
+    }
+
+    #endregion
+
     #region Helpers
+
+    /// <summary>
+    /// Builds an unsigned JWT with the given expiration (GetTokenAsync only reads the exp claim).
+    /// </summary>
+    private static string CreateJwt(DateTimeOffset expiresAt)
+    {
+        static string Encode(string json) =>
+            Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json))
+                .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+        var header = Encode("""{"alg":"none","typ":"JWT"}""");
+        var payload = Encode($$"""{"sub":"user-uid-001","exp":{{expiresAt.ToUnixTimeSeconds()}}}""");
+        return $"{header}.{payload}.signature";
+    }
 
     private void SetupStorageWithRefreshToken(string? refreshToken)
     {
@@ -419,6 +542,38 @@ public class FirebaseTokenProviderTests
     #endregion
 
     #region Test Doubles
+
+    /// <summary>
+    /// Dictionary-backed token storage, so refreshed tokens are visible to subsequent reads.
+    /// </summary>
+    private sealed class InMemoryTokenStorage : ITokenStorage
+    {
+        public Dictionary<string, string> Values { get; } = new();
+
+        public InMemoryTokenStorage(string idToken, string? refreshToken)
+        {
+            Values["firebase_id_token"] = idToken;
+            if (refreshToken is not null)
+            {
+                Values["firebase_refresh_token"] = refreshToken;
+            }
+        }
+
+        public ValueTask<(bool Success, string? Value)> GetAsync(string key) =>
+            new(Values.TryGetValue(key, out var value) ? (true, value) : (false, null));
+
+        public ValueTask SetAsync(string key, string value)
+        {
+            Values[key] = value;
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask DeleteAsync(string key)
+        {
+            Values.Remove(key);
+            return ValueTask.CompletedTask;
+        }
+    }
 
     /// <summary>
     /// A fake HttpMessageHandler that returns a predefined response.

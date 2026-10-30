@@ -85,6 +85,14 @@
     </div>
 }
 
+@if (DeleteErrorName is not null)
+{
+    <div class="search-error-alert delete-error-alert" role="alert" aria-live="assertive">
+        <span class="alert-icon" aria-hidden="true">⚠️</span>
+        <span>Não foi possível excluir '@DeleteErrorName'. Tente novamente.</span>
+    </div>
+}
+
 @if (IsLoading)
 {
     <div class="loading-state" role="status" aria-live="polite">
@@ -327,6 +335,13 @@ else
         <div class="loading-more" role="status" aria-live="polite">
             <div class="spinner-sm" aria-hidden="true"></div>
             <span>Carregando mais registros...</span>
+        </div>
+    }
+    else if (HasLoadMoreError)
+    {
+        <div class="load-more-error" role="alert">
+            <span>Não foi possível carregar mais registros.</span>
+            <button type="button" class="btn btn-outline-primary btn-sm" @onclick="LoadMoreItems">Tentar novamente</button>
         </div>
     }
 

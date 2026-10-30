@@ -813,6 +813,16 @@
     font-size: 0.85rem;
 }
 
+.load-more-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1.5rem 1rem;
+    color: #664d03;
+    font-size: 0.85rem;
+}
+
 .scroll-sentinel {
     height: 1px;
     width: 100%;
