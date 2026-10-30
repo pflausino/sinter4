@@ -237,7 +237,7 @@ else
                         {
                             <td class="col-actions">
                                 <div class="action-group">
-                                    <a href="@($"/file-records/{record.Id}/edit")" class="btn-action btn-edit" title="Editar" aria-label="Editar @record.Name">
+                                    <a href="@($"/file-records/{record.Id}/edit{ReturnQueryString}")" class="btn-action btn-edit" title="Editar" aria-label="Editar @record.Name">
                                         ✏️
                                     </a>
                                     <button class="btn-action btn-delete" @onclick="() => RequestDelete(record.Id, record.Name)" title="Excluir" aria-label="Excluir @record.Name">
@@ -321,7 +321,7 @@ else
                 @if (IsColumnVisible("actions"))
                 {
                     <div class="card-actions">
-                        <a href="@($"/file-records/{record.Id}/edit")" class="btn btn-sm btn-outline-secondary" aria-label="Editar @record.Name">Editar</a>
+                        <a href="@($"/file-records/{record.Id}/edit{ReturnQueryString}")" class="btn btn-sm btn-outline-secondary" aria-label="Editar @record.Name">Editar</a>
                         <button class="btn btn-sm btn-outline-danger" @onclick="() => RequestDelete(record.Id, record.Name)" aria-label="Excluir @record.Name">Excluir</button>
                     </div>
                 }

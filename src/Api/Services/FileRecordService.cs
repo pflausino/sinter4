@@ -260,13 +260,26 @@ public class FileRecordService : IFileRecordService
         return $"SELECT COUNT(*)::int AS \"Value\" FROM file_records WHERE {whereClause}";
     }
 
+    /// <summary>
+    /// A record matches when every term is found in name or client, OR when the whole query with
+    /// spaces and punctuation removed is found in name or client stripped the same way. The second
+    /// form makes "HORTODENTE" find "Horto Dente" (the per-term form already covers the reverse).
+    /// </summary>
     private static string BuildSearchWhereClause(string[] terms)
     {
-        var conditions = new StringBuilder();
+        var conditions = new StringBuilder("(");
         for (int i = 0; i < terms.Length; i++)
         {
             if (i > 0) conditions.Append(" AND ");
             conditions.Append($"(unaccent(lower(name)) ILIKE unaccent(lower(@p{i})) OR unaccent(lower(client)) ILIKE unaccent(lower(@p{i})))");
+        }
+        conditions.Append(')');
+
+        if (CompactSearchTerm(terms) is not null)
+        {
+            conditions.Append(
+                " OR regexp_replace(unaccent(lower(name)), '[^[:alnum:]]', '', 'g') ILIKE unaccent(lower(@compact))" +
+                " OR regexp_replace(unaccent(lower(client)), '[^[:alnum:]]', '', 'g') ILIKE unaccent(lower(@compact))");
         }
 
         return conditions.ToString();
@@ -274,12 +287,28 @@ public class FileRecordService : IFileRecordService
 
     private static object[] BuildSearchParameters(string[] terms)
     {
-        var parameters = new object[terms.Length];
+        var parameters = new List<object>(terms.Length + 1);
         for (int i = 0; i < terms.Length; i++)
         {
-            parameters[i] = new NpgsqlParameter($"@p{i}", $"%{terms[i]}%");
+            parameters.Add(new NpgsqlParameter($"@p{i}", $"%{terms[i]}%"));
         }
-        return parameters;
+
+        var compact = CompactSearchTerm(terms);
+        if (compact is not null)
+        {
+            parameters.Add(new NpgsqlParameter("@compact", $"%{compact}%"));
+        }
+
+        return parameters.ToArray();
+    }
+
+    /// <summary>
+    /// Joins the terms keeping only letters and digits, or null when nothing is left.
+    /// </summary>
+    internal static string? CompactSearchTerm(string[] terms)
+    {
+        var compact = new string(string.Concat(terms).Where(char.IsLetterOrDigit).ToArray());
+        return compact.Length > 0 ? compact : null;
     }
 
     internal static int ComputeScore(FileRecord record, string[] terms)
