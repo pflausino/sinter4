@@ -144,10 +144,17 @@ public class ClockSkewTestFactory : WebApplicationFactory<Program>
         // Pre-initialize FirebaseApp if not already done
         if (FirebaseAdmin.FirebaseApp.DefaultInstance is null)
         {
-            FirebaseAdmin.FirebaseApp.Create(new FirebaseAdmin.AppOptions
+            try
             {
-                Credential = Google.Apis.Auth.OAuth2.GoogleCredential.FromJson(fakeServiceAccountJson)
-            });
+                FirebaseAdmin.FirebaseApp.Create(new FirebaseAdmin.AppOptions
+                {
+                    Credential = Google.Apis.Auth.OAuth2.GoogleCredential.FromJson(fakeServiceAccountJson)
+                });
+            }
+            catch (ArgumentException)
+            {
+                // Another factory created the default FirebaseApp in parallel — safe to ignore
+            }
         }
     }
 
