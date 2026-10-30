@@ -1,9 +1,12 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+@* Browser auto-translation rewrites text nodes that Blazor still tracks, so later renders
+   update detached nodes and the page shows stale rows (e.g. search results not updating). *@
+<html lang="pt-BR" translate="no">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="google" content="notranslate" />
     <base href="/" />
     <ResourcePreloader />
     <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" />
