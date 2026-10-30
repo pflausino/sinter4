@@ -335,6 +335,40 @@ public class FileRecordSearchIntegrationTests : IClassFixture<PostgresWebApplica
         Assert.Contains(results, r => r.Name == "São Paulo Design");
     }
 
+    [Theory]
+    [InlineData("Horto {0} Dente", "HORTO{0}DENTE")]   // query without spaces, record with spaces
+    [InlineData("Hortodente{0}", "HORTO DENTE{0}")]    // query with spaces, record without
+    [InlineData("Horto-Dente {0}", "hortodente{0}")]   // punctuation in the record is ignored
+    [InlineData("Gráfica Horto {0}", "grafica-horto{0}")] // punctuation and accents in the query
+    public async Task Search_IgnoresSpacesAndPunctuation_FindsRecordByClient(string clientPattern, string queryPattern)
+    {
+        var marker = $"m{Guid.NewGuid():N}";
+        var client = string.Format(clientPattern, marker);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            dbContext.FileRecords.Add(new FileRecord
+            {
+                Id = Guid.NewGuid(),
+                Name = "Apostila",
+                FileType = FileType.PDF,
+                Client = client,
+                Date = DateTime.SpecifyKind(new DateTime(2026, 6, 17), DateTimeKind.Utc)
+            });
+            await dbContext.SaveChangesAsync();
+        }
+
+        var query = Uri.EscapeDataString(string.Format(queryPattern, marker));
+        var response = await _client.GetAsync($"/api/file-records/search?q={query}");
+
+        response.EnsureSuccessStatusCode();
+        var paginated = await response.Content.ReadFromJsonAsync<PaginatedResponse<FileRecordResponse>>();
+        Assert.NotNull(paginated);
+        Assert.Single(paginated.Items, r => r.Client == client);
+        Assert.Equal(1, paginated.TotalCount);
+    }
+
     [Fact]
     public async Task Search_Unauthenticated_Returns401()
     {

@@ -23,8 +23,11 @@ Browser ──SignalR──> Web (Blazor Server) ──HTTP + Bearer JWT──> 
   pela API usando `AuthenticatedHttpClient` (HttpClient nomeado `"Api"` + header `Bearer` com o ID token).
 - **Login:** `Login.razor` → `FirebaseTokenProvider` chama a REST API do Firebase com `Firebase:ApiKey` →
   ID/refresh token gravados em `ProtectedLocalStorage` (`ProtectedTokenStorage`) →
-  `FirebaseAuthStateProvider` decodifica o JWT no servidor do Blazor e renova quando faltam ≤ 5 min.
-  Durante o prerender não há JS interop, então o estado começa anônimo.
+  `FirebaseAuthStateProvider` decodifica o JWT no servidor do Blazor. O estado de login só é avaliado quando
+  o circuito começa, então quem mantém a sessão viva é `FirebaseTokenProvider.GetTokenAsync`: ele renova o
+  token quando faltam ≤ 5 min. Sem token utilizável, `AuthenticatedHttpClient` limpa a sessão e manda para
+  `/login`. Não use `DelegatingHandler` para isso: roda fora do escopo do circuito e não lê o
+  `ProtectedLocalStorage`.
 - **API:** valida o JWT contra `https://securetoken.google.com/{Firebase:ProjectId}`; todos os endpoints de
   `/api/file-records` exigem a policy `"Authenticated"`. Respostas 401 trazem `{ error, message }`
   (`missing_token`, `invalid_token`, `token_expired`).
@@ -48,9 +51,17 @@ Respostas de lista usam `PaginatedResponse<T>(Items, TotalCount, HasMore)`. A UI
 ## Armadilhas
 
 - **Busca é SQL cru** (`FileRecordService.BuildSearchWhereClause`): cada termo vira
-  `unaccent(lower(col)) ILIKE '%termo%'` em `name OR client`, e os termos são combinados com AND. Depende
-  da extensão `unaccent` (migration `AddUnaccentExtension`). Sempre use parâmetros Npgsql, nunca concatene
-  entrada do usuário.
+  `unaccent(lower(col)) ILIKE '%termo%'` em `name OR client`, e os termos são combinados com AND. Além disso,
+  a consulta inteira sem espaços e pontuação é comparada com `name`/`client` limpos do mesmo jeito
+  (`regexp_replace(..., '[^[:alnum:]]', '', 'g')`), para "HORTODENTE" achar "Horto Dente". Depende da
+  extensão `unaccent` (migration `AddUnaccentExtension`). Sempre use parâmetros Npgsql, nunca concatene
+  entrada do usuário. Mudou o SQL? Rode `tests/Integration`; os testes de API usam InMemory e não o executam.
+- **Lista de fichas (`FileRecords.razor.cs`):** toda operação que substitui a lista passa por
+  `StartListRequest()` e descarta a resposta se `IsCurrentListRequest(version)` for falso. Mantenha esse
+  padrão em novas cargas, senão respostas lentas sobrescrevem resultados novos. O termo da busca fica na URL
+  (`/file-records?q=...`) e as páginas de edição recebem `?q=` para voltar à mesma busca.
+- **A página declara `lang="pt-BR" translate="no"`** (`App.razor`). Tradução automática do navegador quebra a
+  renderização do Blazor (a tela mostra conteúdo antigo). Não remova.
 - **Ordenação tem whitelist.** Para tornar uma coluna ordenável, atualize os três pontos juntos:
   `ValidSortFields`, o `switch` de `ApplySort` (LINQ) e confira se o nome bate com a coluna snake_case usada
   em `BuildOrderByClause` (SQL cru da busca). Padrão: `date DESC`; desempate sempre por `id`.

@@ -25,6 +25,14 @@ public partial class FileRecords : IAsyncDisposable
 
     [Inject] private AuthenticatedHttpClient ApiClient { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    // Search term kept in the URL (/file-records?q=...) so the search survives a round trip to the
+    // edit page, a reload, browser back/forward, and can be bookmarked.
+    [SupplyParameterFromQuery(Name = "q")]
+    public string? Query { get; set; }
+
+    private bool _parametersInitialized;
 
     private List<FileRecordResponse> Records { get; set; } = [];
     private bool IsLoading { get; set; } = true;
@@ -278,11 +286,40 @@ public partial class FileRecords : IAsyncDisposable
     private string? DeleteTargetName { get; set; }
     private string? DeleteErrorName { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         InitializeColumnVisibility();
-        await LoadRecords();
     }
+
+    /// <summary>
+    /// Runs the search from <c>?q=</c> on first load and whenever the URL's term changes from outside
+    /// (browser back/forward). URL updates made by this page already match <see cref="SearchedTerm"/>,
+    /// so they don't trigger a second search.
+    /// </summary>
+    protected override async Task OnParametersSetAsync()
+    {
+        var query = Query?.Trim() ?? string.Empty;
+        if (_parametersInitialized && query == (SearchedTerm ?? string.Empty)) return;
+        _parametersInitialized = true;
+
+        SearchTerm = query;
+        if (query.Length == 0) await ClearSearch();
+        else await ExecuteSearch();
+    }
+
+    private void SyncSearchTermToUrl()
+    {
+        var urlTerm = Query?.Trim() ?? string.Empty;
+        if (urlTerm == (SearchedTerm ?? string.Empty)) return;
+
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("q", SearchedTerm), replace: true);
+    }
+
+    /// <summary>
+    /// Query string appended to edit links so the edit page can return to the same search.
+    /// </summary>
+    private string ReturnQueryString =>
+        string.IsNullOrEmpty(SearchedTerm) ? string.Empty : $"?q={Uri.EscapeDataString(SearchedTerm)}";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -438,6 +475,7 @@ public partial class FileRecords : IAsyncDisposable
             // Use the term captured at submit time — the input may have changed while the request ran
             SearchedTerm = term;
             IsSearchActive = true;
+            SyncSearchTermToUrl();
         }
         catch
         {
@@ -456,6 +494,7 @@ public partial class FileRecords : IAsyncDisposable
         SearchedTerm = null;
         SearchResultCount = null;
         HasSearchError = false;
+        SyncSearchTermToUrl();
         await LoadRecords();
     }
 

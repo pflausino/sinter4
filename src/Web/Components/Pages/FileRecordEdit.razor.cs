@@ -14,6 +14,13 @@ public partial class FileRecordEdit
 
     [Parameter] public Guid Id { get; set; }
 
+    // Search term of the list this page was opened from, so saving or going back returns to it
+    [SupplyParameterFromQuery(Name = "q")]
+    public string? ReturnQuery { get; set; }
+
+    private string ListUrl =>
+        string.IsNullOrWhiteSpace(ReturnQuery) ? "/file-records" : $"/file-records?q={Uri.EscapeDataString(ReturnQuery)}";
+
     private FileRecordEditModel Model { get; set; } = new();
     private bool IsLoading { get; set; } = true;
     private bool NotFound { get; set; }
@@ -82,7 +89,7 @@ public partial class FileRecordEdit
 
             if (response.IsSuccessStatusCode)
             {
-                Navigation.NavigateTo("/file-records");
+                Navigation.NavigateTo(ListUrl);
             }
             else
             {
