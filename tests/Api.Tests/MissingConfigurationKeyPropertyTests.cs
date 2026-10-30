@@ -14,11 +14,8 @@ namespace Api.Tests;
 /// Feature: firebase-authentication, Property 9: Missing configuration key exception identifies the key
 /// **Validates: Requirements 6.4**
 /// </summary>
-[Collection("FirebaseApp")]
-public class MissingConfigurationKeyPropertyTests : IDisposable
+public class MissingConfigurationKeyPropertyTests
 {
-    private static readonly object FirebaseAppLock = new();
-
     /// <summary>
     /// Generates an empty-ish value based on a seed:
     /// - 0: empty string
@@ -62,10 +59,7 @@ public class MissingConfigurationKeyPropertyTests : IDisposable
 
         // Ensure FirebaseApp is initialized so FirebaseInitializer.Initialize() skips
         // and we reach the ProjectId validation in Program.cs
-        lock (FirebaseAppLock)
-        {
-            EnsureFirebaseAppInitialized();
-        }
+        EnsureFirebaseAppInitialized();
 
         try
         {
@@ -110,7 +104,8 @@ public class MissingConfigurationKeyPropertyTests : IDisposable
     /// contains both the key name and the configuration section path Firebase:{KeyName}.
     ///
     /// This test verifies that when ServiceAccountPath is missing or empty,
-    /// FirebaseInitializer.Initialize() throws an InvalidOperationException whose message
+    /// the ServiceAccountPath validation used by FirebaseInitializer.Initialize() throws an
+    /// InvalidOperationException whose message
     /// contains both "ServiceAccountPath" and "Firebase:ServiceAccountPath".
     ///
     /// **Validates: Requirements 6.4**
@@ -125,49 +120,31 @@ public class MissingConfigurationKeyPropertyTests : IDisposable
 
         var emptyValue = GenerateEmptyValue(seed.Get);
 
-        lock (FirebaseAppLock)
+        // Validates through the same method Initialize() uses, without deleting the process-wide
+        // default FirebaseApp: test classes run in parallel, and deleting it made other classes'
+        // startups try to create it from their own config and fail intermittently.
+        try
         {
-            try
-            {
-                // Delete the default FirebaseApp so Initialize() runs the validation
-                FirebaseAdmin.FirebaseApp.DefaultInstance?.Delete();
-
-                var configData = new Dictionary<string, string?>
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["Firebase:ProjectId"] = "test-project-id",
                     ["Firebase:ServiceAccountPath"] = emptyValue
-                };
+                })
+                .Build();
 
-                var configuration = new ConfigurationBuilder()
-                    .AddInMemoryCollection(configData)
-                    .Build();
+            FirebaseInitializer.GetValidatedServiceAccountPath(configuration);
 
-                // Call the actual FirebaseInitializer.Initialize() method
-                FirebaseInitializer.Initialize(configuration);
-
-                // If we get here, no exception was thrown — test fails
-                return false;
-            }
-            catch (InvalidOperationException ex)
-            {
-                return ex.Message.Contains(keyName) && ex.Message.Contains(sectionPath);
-            }
-            catch
-            {
-                return false;
-            }
-            finally
-            {
-                EnsureFirebaseAppInitialized();
-            }
+            // If we get here, no exception was thrown — test fails
+            return false;
         }
-    }
-
-    public void Dispose()
-    {
-        lock (FirebaseAppLock)
+        catch (InvalidOperationException ex)
         {
-            EnsureFirebaseAppInitialized();
+            return ex.Message.Contains(keyName) && ex.Message.Contains(sectionPath);
+        }
+        catch
+        {
+            return false;
         }
     }
 
