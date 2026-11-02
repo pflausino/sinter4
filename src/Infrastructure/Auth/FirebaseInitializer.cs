@@ -12,13 +12,11 @@ internal static class FirebaseInitializer
         if (FirebaseApp.DefaultInstance is not null)
             return;
 
-        var serviceAccountPath = configuration["Firebase:ServiceAccountPath"];
-
-        ValidateServiceAccountPath(serviceAccountPath);
+        var serviceAccountPath = GetValidatedServiceAccountPath(configuration);
 
         try
         {
-            var credential = GoogleCredential.FromFile(serviceAccountPath!);
+            var credential = GoogleCredential.FromFile(serviceAccountPath);
             FirebaseApp.Create(new AppOptions { Credential = credential });
         }
         catch (Exception ex) when (ex is not FileNotFoundException)
@@ -26,6 +24,17 @@ internal static class FirebaseInitializer
             throw new InvalidOperationException(
                 $"Firebase service account file at '{serviceAccountPath}' contains invalid credentials", ex);
         }
+    }
+
+    /// <summary>
+    /// Reads <c>Firebase:ServiceAccountPath</c> and validates it. Has no FirebaseApp side effects, so
+    /// tests can check the configuration errors without touching the process-wide default app.
+    /// </summary>
+    internal static string GetValidatedServiceAccountPath(IConfiguration configuration)
+    {
+        var serviceAccountPath = configuration["Firebase:ServiceAccountPath"];
+        ValidateServiceAccountPath(serviceAccountPath);
+        return serviceAccountPath!;
     }
 
     /// <summary>
